@@ -1,0 +1,8 @@
+
+keytool=...
+
+for i in {1..88}; do
+  ${keytool} -keystore "nodes.jks" -storepass "password" \
+  -genkey -noprompt -keyalg "dsa" -alias "node${i}" -keypass "password" \
+  -dname "CN=node${i}.dslab.inf.usi.ch, OU=DSLab, O=USI, L=Lugano, ST=Ticino, C=CH"
+done

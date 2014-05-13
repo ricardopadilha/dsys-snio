@@ -1,0 +1,137 @@
+final SSLContext context = getContext();
+
+final SSLEngine client = context.createSSLEngine();
+client.setUseClientMode(true);
+
+final SSLEngine server = context.createSSLEngine();
+server.setUseClientMode(false);
+
+final ByteBuffer hello = ByteBuffer.wrap("hello world".getBytes());
+
+final SSLSession clientSession = client.getSession();
+ByteBuffer appOut = ByteBuffer.allocate(appSize != 0 ? appSize : clientSession.getApplicationBufferSize());
+ByteBuffer netOut = ByteBuffer.allocate(netSize != 0 ? netSize : clientSession.getPacketBufferSize());
+ByteBuffer appIn = ByteBuffer.allocate(appSize != 0 ? appSize : clientSession.getApplicationBufferSize());
+ByteBuffer netIn = ByteBuffer.allocate(netSize != 0 ? netSize : clientSession.getPacketBufferSize());
+
+SSLEngineResult result;
+Runnable task;
+
+// Simple handshake
+
+// client -- 154 --> server
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 154 ->
+netOut.flip();
+
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_TASK && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 154 <-
+while ((task = server.getDelegatedTask()) != null) {
+	task.run();
+}
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() == 0 && result.bytesProduced() == 0;
+
+// server -- 1278 --> client
+result = server.wrap(appOut, netIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 1278 ->
+netIn.flip();
+
+result = client.unwrap(netIn, appIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_TASK && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 1278 <-
+while ((task = client.getDelegatedTask()) != null) {
+	task.run();
+}
+result = client.unwrap(netIn, appIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() == 0 && result.bytesProduced() == 0;
+
+// client -- 107 --> server
+netOut.compact();
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 107 ->
+netOut.flip();
+
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_TASK && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 107 <-
+while ((task = server.getDelegatedTask()) != null) {
+	task.run();
+}
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.BUFFER_UNDERFLOW && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() == 0 && result.bytesProduced() == 0;
+
+// client -- 6 --> server
+netOut.compact();
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 6 ->
+netOut.flip();
+
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 6 <-
+
+// client -- 53 --> server
+netOut.compact();
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 53 ->
+netOut.flip();
+
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 53 <-
+
+// server -- 6 --> client
+
+netIn.compact();
+result = server.wrap(appOut, netIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 6 ->
+netIn.flip();
+
+result = client.unwrap(netIn, appIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 6 <-
+
+// server -- 53 --> client
+netIn.compact();
+result = server.wrap(appOut, netIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.FINISHED && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 53 ->
+netIn.flip();
+
+result = client.unwrap(netIn, appIn);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.FINISHED && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 53 <-
+
+// client -- "hello world" --> server
+netOut.compact();
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING && result.bytesConsumed() > 0 && result.bytesProduced() > 0; // 11 -> 37 ->
+netOut.flip();
+
+// server
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.OK && result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING && result.bytesConsumed() > 0 && result.bytesProduced() > 0; // 11 <- 37 <-
+
+appOut.flip();
+final byte[] array = new byte[appOut.remaining()];
+appOut.get(array);
+appOut.clear();
+final String received = new String(array);
+assert "hello world".equals(received);
+
+// close request from client
+
+// client -- 37 --> server
+client.closeOutbound();
+netOut.compact();
+result = client.wrap(hello, netOut);
+assert result.getStatus() == Status.CLOSED && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 37 ->
+netOut.flip();
+
+result = server.unwrap(netOut, appOut);
+assert result.getStatus() == Status.CLOSED && result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 37 <-
+
+// close reply from server
+
+// server -- 37 --> client
+netIn.compact();
+result = server.wrap(appOut, netIn);
+assert result.getStatus() == Status.CLOSED && result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING && result.bytesConsumed() == 0 && result.bytesProduced() > 0; // 37 ->
+netIn.flip();
+
+result = client.unwrap(netIn, appIn);
+assert result.getStatus() == Status.CLOSED && result.getHandshakeStatus() == HandshakeStatus.NOT_HANDSHAKING && result.bytesConsumed() > 0 && result.bytesProduced() == 0; // 37 <-
