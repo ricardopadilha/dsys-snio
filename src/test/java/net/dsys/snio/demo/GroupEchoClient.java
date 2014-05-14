@@ -33,6 +33,9 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * GroupChannel example. Connects to four servers simultaneously and sends the same
+ * messages to all of them.
+ * 
  * @author Ricardo Padilha
  */
 public final class GroupEchoClient {
@@ -42,11 +45,11 @@ public final class GroupEchoClient {
 	}
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
-		final int threads = 1;
-		final int length = 1024;
+		final int threads = Integer.parseInt(getArg("threads", "1", args));
+		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final String host = getArg("host", "localhost", args);
-		final int port = 12345;
-		final int servers = 4;
+		final int port = Integer.parseInt(getArg("port", "12345", args));
+		final int servers = Integer.parseInt(getArg("servers", "4", args));
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
 		final MessageChannel<ByteBuffer> client = GroupChannels.newTCPGroup()
@@ -88,5 +91,4 @@ public final class GroupEchoClient {
 		}
 		return defaultValue;
 	}
-
 }

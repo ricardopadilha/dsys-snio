@@ -37,6 +37,13 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo client using SSL.
+ * From a performance PoV it is better to pass messages through
+ * a compressor before encryption because compression uses less
+ * CPU cycles per byte than encryption.
+ * If heap buffers are used in the channel (the default), one less
+ * memory copy is needed to encrypt.
+ * 
  * @author Ricardo Padilha
  */
 public final class SSLEchoClient {
@@ -47,7 +54,6 @@ public final class SSLEchoClient {
 
 	public static void main(final String[] args) throws Exception {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
@@ -56,8 +62,6 @@ public final class SSLEchoClient {
 		final MessageChannel<ByteBuffer> client = MessageChannels.newSSLChannel()
 				.setContext(getContext())
 				.setPool(pool)
-				.setBufferCapacity(buffers)
-				//.setMessageLength(length)
 				.setMessageCodec(new LZ4CompressionCodec(length))
 				.useRingBuffer()
 				.open();
@@ -68,7 +72,7 @@ public final class SSLEchoClient {
 		final MessageBufferConsumer<ByteBuffer> in = client.getInputBuffer();
 		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
 
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
+		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(MessageHandlers.syncConsumer(in, new EchoConsumer()));
 		executor.execute(MessageHandlers.syncProducer(out, new EchoProducer()));
 

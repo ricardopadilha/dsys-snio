@@ -32,6 +32,7 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Oneway echo client using LZ4 compression over TCP.
  * @author Ricardo Padilha
  */
 public final class TCPOnewayLZ4Client {
@@ -42,22 +43,22 @@ public final class TCPOnewayLZ4Client {
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "65260", args));
 		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
+
 		final MessageChannel<ByteBuffer> client = MessageChannels.newTCPChannel()
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageCodec(new LZ4CompressionCodec(length))
 				.useRingBuffer()
 				.open();
+
 		client.connect(new InetSocketAddress(host, port));
 		client.getConnectFuture().get();
 
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
+		final ExecutorService executor = Executors.newCachedThreadPool();
 		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
 		executor.execute(MessageHandlers.syncProducer(out, new EchoProducer()));
 
@@ -77,5 +78,4 @@ public final class TCPOnewayLZ4Client {
 		}
 		return defaultValue;
 	}
-
 }

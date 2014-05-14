@@ -29,6 +29,8 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Oneway echo server using TCP.
+ * 
  * @author Ricardo Padilha
  */
 public final class TCPOnewayServer {
@@ -39,25 +41,19 @@ public final class TCPOnewayServer {
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "65262", args)); //65533
 		final int port = Integer.parseInt(getArg("port", "12345", args));
-		final long bandwidthThreshold = 800_000_000; // 800 Mbps
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageLength(length)
-				//.setMessageCodec(new LZ4CompressionCodec(length))
-				//.setMessageCodec(new MaxTputCodec(length, bandwidthThreshold))
 				.useRingBuffer()
 				.open();
 
 		// one thread per client
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
-				//.useDecoupledProcessing(length)
 				.useManyConsumers(EchoConsumer.createFactory())
 				.build();
 
@@ -80,5 +76,4 @@ public final class TCPOnewayServer {
 		}
 		return defaultValue;
 	}
-
 }

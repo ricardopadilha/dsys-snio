@@ -25,6 +25,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * Reference implementation for oneway tests. It takes a single blocking socket
+ * and sends as much as it can, as often as it can.
+ * 
  * @author Ricardo Padilha
  */
 public final class RefOnewayServer {
@@ -43,7 +46,7 @@ public final class RefOnewayServer {
 
 		final SocketChannel channel = server.accept();
 		// one thread per client
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
+		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(createAppHandler(channel, length));
 
 		synchronized (executor) {
@@ -81,5 +84,4 @@ public final class RefOnewayServer {
 		}
 		return defaultValue;
 	}
-
 }

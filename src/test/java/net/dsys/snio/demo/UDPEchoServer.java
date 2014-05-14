@@ -32,11 +32,13 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo server using UDP.
+ * 
  * @author Ricardo Padilha
  */
-public final class UDPServer {
+public final class UDPEchoServer {
 
-	private UDPServer() {
+	private UDPEchoServer() {
 		return;
 	}
 
@@ -78,5 +80,4 @@ public final class UDPServer {
 		}
 		return defaultValue;
 	}
-
 }

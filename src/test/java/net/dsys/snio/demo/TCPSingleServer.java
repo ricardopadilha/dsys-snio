@@ -32,6 +32,9 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo server using TCP. This implementation uses a single processor to handle
+ * all incoming messages.
+ * 
  * @author Ricardo Padilha
  */
 public final class TCPSingleServer {
@@ -58,7 +61,7 @@ public final class TCPSingleServer {
 				.open();
 
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
-				.useDecoupledProcessing(length)
+				//.useDecoupledProcessing(length)
 				.useSingleConsumer(new EchoServer())
 				.build();
 

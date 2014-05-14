@@ -32,17 +32,18 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo client using UDP.
+ * 
  * @author Ricardo Padilha
  */
-public final class UDPClient {
+public final class UDPEchoClient {
 
-	private UDPClient() {
+	private UDPEchoClient() {
 		return;
 	}
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
@@ -50,7 +51,6 @@ public final class UDPClient {
 		final SelectorPool pool = SelectorPools.open("client", threads);
 		final MessageChannel<ByteBuffer> client = MessageChannels.newUDPChannel()
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageLength(length)
 				.useRingBuffer()
 				.open();
@@ -58,7 +58,7 @@ public final class UDPClient {
 		final MessageBufferConsumer<ByteBuffer> in = client.getInputBuffer();
 		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
 
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
+		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(MessageHandlers.syncConsumer(in, new EchoConsumer()));
 		executor.execute(MessageHandlers.syncProducer(out, new EchoProducer(new InetSocketAddress(host, port))));
 
@@ -78,5 +78,4 @@ public final class UDPClient {
 		}
 		return defaultValue;
 	}
-
 }

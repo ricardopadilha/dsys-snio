@@ -29,6 +29,8 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Example of group of serves, used to test GroupEchoClient.
+ * 
  * @author Ricardo Padilha
  */
 public final class GroupEchoServer {
@@ -38,11 +40,12 @@ public final class GroupEchoServer {
 	}
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
-		final int length = 1024;
-		final int port = 12345;
-		final int servers = 4;
+		final int threads = Integer.parseInt(getArg("threads", "1", args));
+		final int length = Integer.parseInt(getArg("length", "1024", args));
+		final int port = Integer.parseInt(getArg("port", "12345", args));
+		final int servers = Integer.parseInt(getArg("servers", "4", args));
 
-		final SelectorPool pool = SelectorPools.open("server", servers);
+		final SelectorPool pool = SelectorPools.open("server", threads);
 
 		for (int i = 0; i < servers; i++) {
 			final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
@@ -59,5 +62,18 @@ public final class GroupEchoServer {
 		}
 
 		pool.getCloseFuture().get();
+	}
+
+	private static String getArg(final String name, final String defaultValue, final String[] args) {
+		if (args == null || name == null) {
+			return defaultValue;
+		}
+		final String key = "--" + name;
+		for (int i = 0, k = args.length - 1; i < k; i++) {
+			if (key.equals(args[i])) {
+				return args[i + 1];
+			}
+		}
+		return defaultValue;
 	}
 }

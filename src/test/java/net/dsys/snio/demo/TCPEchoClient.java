@@ -33,6 +33,8 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo client using TCP.
+ * 
  * @author Ricardo Padilha
  */
 public final class TCPEchoClient {
@@ -43,24 +45,17 @@ public final class TCPEchoClient {
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
-		final long bandwidthThreshold = 800_000_000; // 800 Mbps
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
 		final MessageChannel<ByteBuffer> client = MessageChannels.newTCPChannel()
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageLength(length)
-				//.setMessageCodec(new DeflateCodec(length))
-				//.setMessageCodec(new LZ4CompressionCodec(length))
-				//.setMessageCodec(new MaxTputCodec(length, bandwidthThreshold))
 				.useRingBuffer()
 				.open();
 
-		//client.setOption(StandardSocketOptions.TCP_NODELAY, Boolean.TRUE);
 		client.connect(new InetSocketAddress(host, port));
 		client.getConnectFuture().get();
 
@@ -68,7 +63,7 @@ public final class TCPEchoClient {
 		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
 
 		final ByteBufferCopier bbc = new ByteBufferCopier();
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
+		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(MessageHandlers.asyncConsumer(in, new EchoConsumer(), ByteBuffer.allocate(length), bbc, bbc));
 		executor.execute(MessageHandlers.asyncProducer(out, new EchoProducer(), ByteBuffer.allocate(length), bbc, bbc));
 
@@ -88,5 +83,4 @@ public final class TCPEchoClient {
 		}
 		return defaultValue;
 	}
-
 }

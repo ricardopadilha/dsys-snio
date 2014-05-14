@@ -22,11 +22,14 @@ import java.nio.ByteBuffer;
 import net.dsys.snio.api.handler.MessageProducer;
 
 /**
+ * Produces echo messages.
+ * Supports both TCP and UDP channels.
+ * 
  * @author Ricardo Padilha
  */
 public final class EchoProducer implements MessageProducer<ByteBuffer> {
 
-	private static final int INT_LENGTH = 4;
+//	private static final int INT_LENGTH = 4;
 	private final InetSocketAddress address;
 	private final int limit;
 	private int i = 0;

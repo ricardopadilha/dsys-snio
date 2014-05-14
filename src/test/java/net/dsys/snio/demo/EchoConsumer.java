@@ -24,6 +24,9 @@ import net.dsys.snio.api.handler.MessageConsumer;
 import net.dsys.snio.api.handler.MessageConsumerFactory;
 
 /**
+ * Consumes echo messages.
+ * Supports both TCP and UDP channels.
+ * 
  * @author Ricardo Padilha
  */
 public final class EchoConsumer implements MessageConsumer<ByteBuffer> {

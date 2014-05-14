@@ -29,6 +29,8 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo server using TCP.
+ * 
  * @author Ricardo Padilha
  */
 public final class TCPEchoServer {
@@ -39,26 +41,19 @@ public final class TCPEchoServer {
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final int port = Integer.parseInt(getArg("port", "12345", args));
-		final long bandwidthThreshold = 800_000_000; // 800 Mbps
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageLength(length)
-				//.setMessageCodec(new DeflateCodec(length))
-				//.setMessageCodec(new LZ4CompressionCodec(length))
-				//.setMessageCodec(new MaxTputCodec(length, bandwidthThreshold))
 				.useRingBuffer()
 				.open();
 
 		// one thread per client
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
-				//.useDecoupledProcessing(length)
 				.useManyConsumers(EchoServer.createFactory())
 				.build();
 
@@ -81,5 +76,4 @@ public final class TCPEchoServer {
 		}
 		return defaultValue;
 	}
-
 }

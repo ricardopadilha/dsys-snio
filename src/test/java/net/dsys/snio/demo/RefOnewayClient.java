@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * Reference implementation for oneway tests. It takes a single blocking socket
+ * and sends as much as it can, as often as it can.
+ * 
  * @author Ricardo Padilha
  */
 public final class RefOnewayClient {

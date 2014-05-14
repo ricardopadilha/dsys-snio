@@ -34,6 +34,13 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
+ * Echo server using SSL.
+ * From a performance PoV it is better to pass messages through
+ * a compressor before encryption because compression uses less
+ * CPU cycles per byte than encryption.
+ * If heap buffers are used in the channel (the default), one less
+ * memory copy is needed to encrypt.
+ * 
  * @author Ricardo Padilha
  */
 public final class SSLEchoServer {
@@ -44,7 +51,6 @@ public final class SSLEchoServer {
 
 	public static void main(final String[] args) throws Exception {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
 		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
@@ -53,10 +59,8 @@ public final class SSLEchoServer {
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newSSLServerChannel()
 				.setContext(getContext())
 				.setPool(pool)
-				.setBufferCapacity(buffers)
 				.setMessageCodec(new LZ4CompressionCodec(length))
 				.useRingBuffer()
-				.useHeapBuffer()
 				.open();
 
 		// one thread per client
