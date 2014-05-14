@@ -22,9 +22,9 @@ import java.net.SocketOption;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.api.future.CallbackFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.CloseListener;
@@ -103,8 +103,8 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getBindFuture() {
-		final SettableFuture<Void> future = new SettableFuture<>();
+	public CallbackFuture<Void> getBindFuture() {
+		final SettableCallbackFuture<Void> future = new SettableCallbackFuture<>();
 		future.success(null);
 		return future;
 	}
@@ -134,7 +134,7 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getConnectFuture() {
+	public CallbackFuture<Void> getConnectFuture() {
 		return processor.getConnectionFuture();
 	}
 
@@ -185,7 +185,7 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		return processor.getCloseFuture();
 	}
 

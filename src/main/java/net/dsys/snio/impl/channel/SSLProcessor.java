@@ -34,7 +34,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
@@ -56,7 +56,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	private ByteBuffer preSendBuffer;
 	private ByteBuffer postReceiveBuffer;
 	private long writeSequence;
-	private volatile SettableFuture<Void> closeFuture;
+	private volatile SettableCallbackFuture<Void> closeFuture;
 	private volatile Callable<Void> closeTask;
 	private volatile boolean closedInternally;
 	private volatile boolean closed;
@@ -370,7 +370,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void shutdown(final SettableFuture<Void> future, final Callable<Void> task) {
+	protected void shutdown(final SettableCallbackFuture<Void> future, final Callable<Void> task) {
 		this.closeFuture = future;
 		this.closeTask = task;
 		engine.closeOutbound();

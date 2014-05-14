@@ -28,8 +28,9 @@ import java.util.concurrent.Future;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.api.lang.Factory;
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
@@ -50,8 +51,8 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	private final int sendSize;
 	private final int receiveSize;
 	private final SSLContext context;
-	private final SettableFuture<Void> bindFuture;
-	private final SettableFuture<Void> closeFuture;
+	private final SettableCallbackFuture<Void> bindFuture;
+	private final SettableCallbackFuture<Void> closeFuture;
 
 	private AcceptListener<ByteBuffer> accept;
 	private CloseListener<ByteBuffer> close;
@@ -84,8 +85,8 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
 		this.context = context;
-		this.bindFuture = new SettableFuture<>();
-		this.closeFuture = new SettableFuture<>();
+		this.bindFuture = new SettableCallbackFuture<>();
+		this.closeFuture = new SettableCallbackFuture<>();
 	}
 
 	/**
@@ -108,7 +109,7 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getBindFuture() {
+	public CallbackFuture<Void> getBindFuture() {
 		return bindFuture;
 	}
 
@@ -161,7 +162,7 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		return closeFuture;
 	}
 

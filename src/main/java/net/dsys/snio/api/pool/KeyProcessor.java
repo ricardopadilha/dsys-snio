@@ -21,6 +21,7 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 
@@ -35,7 +36,7 @@ public interface KeyProcessor<T> {
 	 */
 	void connect(SelectionKey key);
 
-	Future<Void> getConnectionFuture();
+	CallbackFuture<Void> getConnectionFuture();
 
 	/**
 	 * @param thread
@@ -66,6 +67,6 @@ public interface KeyProcessor<T> {
 	 */
 	void close(SelectorExecutor executor, Callable<Void> closeTask);
 
-	Future<Void> getCloseFuture();
+	CallbackFuture<Void> getCloseFuture();
 
 }

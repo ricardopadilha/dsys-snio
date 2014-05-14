@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
+
 /**
  * This interface defines an asynchronous connect operation. When
  * {@link #connect(SocketAddress)} is called, it will not block and return
@@ -45,6 +47,6 @@ public interface AsyncConnectable {
 	 *         exceptions raised during the connection is returned by this
 	 *         future.
 	 */
-	Future<Void> getConnectFuture();
+	CallbackFuture<Void> getConnectFuture();
 
 }

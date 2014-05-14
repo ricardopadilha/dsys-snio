@@ -23,7 +23,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
 
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
@@ -155,7 +155,7 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	protected void shutdown(final SettableFuture<Void> future, final Callable<Void> task) {
+	protected void shutdown(final SettableCallbackFuture<Void> future, final Callable<Void> task) {
 		try {
 			codec.close();
 			task.call();

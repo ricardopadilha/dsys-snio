@@ -17,9 +17,9 @@
 package net.dsys.snio.impl.pool;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
-import net.dsys.commons.impl.future.MergingFuture;
+import net.dsys.commons.api.future.CallbackFuture;
+import net.dsys.commons.impl.future.MergingCallbackFuture;
 import net.dsys.snio.api.pool.SelectorExecutor;
 import net.dsys.snio.api.pool.SelectorPolicy;
 import net.dsys.snio.api.pool.SelectorPool;
@@ -31,7 +31,7 @@ final class SelectorPoolImpl implements SelectorPool {
 
 	private final SelectorPolicy policy;
 	private final SelectorExecutorImpl[] selectors;
-	private Future<Void> closeFuture;
+	private CallbackFuture<Void> closeFuture;
 
 	SelectorPoolImpl(final String name, final int size, final SelectorPolicy policy) {
 		if (size < 1) {
@@ -99,9 +99,9 @@ final class SelectorPoolImpl implements SelectorPool {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		if (closeFuture == null) {
-			final MergingFuture.Builder<Void> builder = MergingFuture.builder();
+			final MergingCallbackFuture.Builder<Void> builder = MergingCallbackFuture.builder();
 			for (final SelectorExecutorImpl selector : selectors) {
 				builder.add(selector.getCloseFuture());
 			}

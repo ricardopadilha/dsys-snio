@@ -22,8 +22,8 @@ import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
 import net.dsys.snio.api.channel.MessageServerChannel;
@@ -91,7 +91,7 @@ final class TCPServerChannel<T> implements MessageServerChannel<T>, Acceptor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getBindFuture() {
+	public CallbackFuture<Void> getBindFuture() {
 		return acceptor.getBindFuture();
 	}
 
@@ -128,7 +128,7 @@ final class TCPServerChannel<T> implements MessageServerChannel<T>, Acceptor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		return acceptor.getCloseFuture();
 	}
 

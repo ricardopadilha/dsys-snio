@@ -22,10 +22,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
-import net.dsys.commons.impl.future.MergingFuture;
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.api.future.CallbackFuture;
+import net.dsys.commons.impl.future.MergingCallbackFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
@@ -39,13 +39,13 @@ import net.dsys.snio.api.pool.SelectorThread;
  */
 abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 
-	private final SettableFuture<Void> connectReadFuture;
-	private final SettableFuture<Void> connectWriteFuture;
-	private final MergingFuture<Void> connectFuture;
-	private final SettableFuture<Void> closeReadFuture;
-	private final SettableFuture<Void> closeWriteFuture;
-	private final SettableFuture<Void> shutdownFuture;
-	private final MergingFuture<Void> closeFuture;
+	private final SettableCallbackFuture<Void> connectReadFuture;
+	private final SettableCallbackFuture<Void> connectWriteFuture;
+	private final MergingCallbackFuture<Void> connectFuture;
+	private final SettableCallbackFuture<Void> closeReadFuture;
+	private final SettableCallbackFuture<Void> closeWriteFuture;
+	private final SettableCallbackFuture<Void> shutdownFuture;
+	private final MergingCallbackFuture<Void> closeFuture;
 
 	private final MessageBufferProvider<T> provider;
 	private final MessageBufferProducer<T> appOut;
@@ -61,15 +61,15 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		if (provider == null) {
 			throw new NullPointerException("provider == null");
 		}
-		this.connectReadFuture = new SettableFuture<>();
-		this.connectWriteFuture = new SettableFuture<>();
-		this.connectFuture = MergingFuture.<Void>builder()
+		this.connectReadFuture = new SettableCallbackFuture<>();
+		this.connectWriteFuture = new SettableCallbackFuture<>();
+		this.connectFuture = MergingCallbackFuture.<Void>builder()
 				.add(connectReadFuture).add(connectWriteFuture).build();
 
-		this.closeReadFuture = new SettableFuture<>();
-		this.closeWriteFuture = new SettableFuture<>();
-		this.shutdownFuture = new SettableFuture<>();
-		this.closeFuture = MergingFuture.<Void>builder()
+		this.closeReadFuture = new SettableCallbackFuture<>();
+		this.closeWriteFuture = new SettableCallbackFuture<>();
+		this.shutdownFuture = new SettableCallbackFuture<>();
+		this.closeFuture = MergingCallbackFuture.<Void>builder()
 				.add(shutdownFuture).add(closeReadFuture).add(closeWriteFuture).build();
 
 		this.provider = provider;
@@ -83,11 +83,11 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final Future<Void> getConnectionFuture() {
+	public final CallbackFuture<Void> getConnectionFuture() {
 		return connectFuture;
 	}
 
-	protected final SettableFuture<Void> getConnectReadFuture() {
+	protected final SettableCallbackFuture<Void> getConnectReadFuture() {
 		return connectReadFuture;
 	}
 
@@ -196,13 +196,13 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 	 * Subclasses need to start shutdown upon call, then once done run the task,
 	 * and set the output of the future.
 	 */
-	protected abstract void shutdown(SettableFuture<Void> future, Callable<Void> task);
+	protected abstract void shutdown(SettableCallbackFuture<Void> future, Callable<Void> task);
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final Future<Void> getCloseFuture() {
+	public final CallbackFuture<Void> getCloseFuture() {
 		return closeFuture;
 	}
 

@@ -33,10 +33,10 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.api.future.CallbackFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.pool.Acceptor;
 import net.dsys.snio.api.pool.KeyAcceptor;
 import net.dsys.snio.api.pool.KeyProcessor;
@@ -54,7 +54,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	private final Queue<IOOperation> ops;
 	private final AtomicBoolean newKeys;
 	private final NavigableSet<SelectionKey> keys;
-	private final SettableFuture<Void> closeFuture;
+	private final SettableCallbackFuture<Void> closeFuture;
 	private Selector selector;
 	private Loop loop;
 
@@ -70,7 +70,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		this.ops = new ConcurrentLinkedQueue<>();
 		this.newKeys = new AtomicBoolean();
 		this.keys = new ConcurrentSkipListSet<>(new KeyComparator());
-		this.closeFuture = new SettableFuture<>();
+		this.closeFuture = new SettableCallbackFuture<>();
 	}
 
 	private void queueOp(final IOOperation op) {
@@ -91,7 +91,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		return selector != null && selector.isOpen();
 	}
 
-	Future<Void> close() {
+	CallbackFuture<Void> close() {
 		final IOOperation close = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -151,7 +151,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	SettableFuture<Void> getCloseFuture() {
+	SettableCallbackFuture<Void> getCloseFuture() {
 		return closeFuture;
 	}
 
@@ -244,7 +244,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	void cancel(final SelectionKey key, final SettableFuture<Void> future) {
+	void cancel(final SelectionKey key, final SettableCallbackFuture<Void> future) {
 		final IOOperation cancel = new IOOperation() {
 			@Override
 			public void run() {
@@ -259,7 +259,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		queueOp(cancel);
 	}
 
-	void cancel(final SelectionKey key, final SettableFuture<Void> future, final Callable<Void> task) {
+	void cancel(final SelectionKey key, final SettableCallbackFuture<Void> future, final Callable<Void> task) {
 		final IOOperation cancel = new IOOperation() {
 			@Override
 			public void run() {

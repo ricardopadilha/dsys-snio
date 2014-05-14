@@ -21,10 +21,10 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.api.lang.Copier;
-import net.dsys.commons.impl.future.MergingFuture;
+import net.dsys.commons.impl.future.MergingCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.CloseListener;
@@ -44,9 +44,9 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	private MessageChannel<T>[] channels;
 	private MessageBufferProducer<T> out;
 	private SocketAddress local;
-	private Future<Void> bindFuture;
-	private Future<Void> connectFuture;
-	private Future<Void> closeFuture;
+	private CallbackFuture<Void> bindFuture;
+	private CallbackFuture<Void> connectFuture;
+	private CallbackFuture<Void> closeFuture;
 
 	GroupChannel(final MessageBufferConsumer<T> in, final AbstractBuilder<MessageChannel<T>, T> builder,
 			final Copier<T> copier) {
@@ -124,9 +124,9 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getBindFuture() {
+	public CallbackFuture<Void> getBindFuture() {
 		if (bindFuture == null) {
-			final MergingFuture.Builder<Void> builder = MergingFuture.builder();
+			final MergingCallbackFuture.Builder<Void> builder = MergingCallbackFuture.builder();
 			for (final MessageChannel<T> channel : channels) {
 				builder.add(channel.getBindFuture());
 			}
@@ -172,9 +172,9 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getConnectFuture() {
+	public CallbackFuture<Void> getConnectFuture() {
 		if (connectFuture == null) {
-			final MergingFuture.Builder<Void> builder = MergingFuture.builder();
+			final MergingCallbackFuture.Builder<Void> builder = MergingCallbackFuture.builder();
 			for (final MessageChannel<T> channel : channels) {
 				builder.add(channel.getConnectFuture());
 			}
@@ -224,9 +224,9 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		if (closeFuture == null) {
-			final MergingFuture.Builder<Void> builder = MergingFuture.builder();
+			final MergingCallbackFuture.Builder<Void> builder = MergingCallbackFuture.builder();
 			for (final MessageChannel<T> channel : channels) {
 				builder.add(channel.getCloseFuture());
 			}

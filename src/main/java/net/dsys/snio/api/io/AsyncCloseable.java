@@ -20,6 +20,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
+
 /**
  * This interface extends the behavior of {@link Closeable}. When
  * {@link #close()} is called, it will not block and return immediately. Callers
@@ -47,6 +49,6 @@ public interface AsyncCloseable extends Closeable {
 	 * @return a {@link Future} that is done when this channel is closed. Any
 	 *         exceptions raised during the closing is returned by this future.
 	 */
-	Future<Void> getCloseFuture();
+	CallbackFuture<Void> getCloseFuture();
 
 }

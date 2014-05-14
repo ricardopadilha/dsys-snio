@@ -25,8 +25,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.api.lang.Factory;
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
@@ -46,8 +47,8 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 	private final Factory<MessageBufferProvider<ByteBuffer>> factory;
 	private final int sendSize;
 	private final int receiveSize;
-	private final SettableFuture<Void> bindFuture;
-	private final SettableFuture<Void> closeFuture;
+	private final SettableCallbackFuture<Void> bindFuture;
+	private final SettableCallbackFuture<Void> closeFuture;
 
 	private AcceptListener<ByteBuffer> accept;
 	private CloseListener<ByteBuffer> close;
@@ -76,8 +77,8 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 		this.factory = factory;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
-		this.bindFuture = new SettableFuture<>();
-		this.closeFuture = new SettableFuture<>();
+		this.bindFuture = new SettableCallbackFuture<>();
+		this.closeFuture = new SettableCallbackFuture<>();
 	}
 
 	/**
@@ -100,7 +101,7 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getBindFuture() {
+	public CallbackFuture<Void> getBindFuture() {
 		return bindFuture;
 	}
 
@@ -151,7 +152,7 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Future<Void> getCloseFuture() {
+	public CallbackFuture<Void> getCloseFuture() {
 		return closeFuture;
 	}
 

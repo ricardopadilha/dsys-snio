@@ -19,7 +19,8 @@ package net.dsys.snio.api.io;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.NetworkChannel;
-import java.util.concurrent.Future;
+
+import net.dsys.commons.api.future.CallbackFuture;
 
 /**
  * This interface extends the {@link NetworkChannel} bind operation to support
@@ -41,6 +42,6 @@ public interface AsyncBindable {
 	 * @return a {@link Future} that is done when this channel is bound. Any
 	 *         exceptions raised during the binding is returned by this future.
 	 */
-	Future<Void> getBindFuture();
+	CallbackFuture<Void> getBindFuture();
 
 }

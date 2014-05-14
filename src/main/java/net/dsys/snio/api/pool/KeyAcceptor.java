@@ -19,8 +19,8 @@ package net.dsys.snio.api.pool;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
+import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
 
@@ -33,7 +33,7 @@ public interface KeyAcceptor<T> {
 
 	void onClose(CloseListener<T> listener);
 
-	Future<Void> getBindFuture();
+	CallbackFuture<Void> getBindFuture();
 
 	void registered(SelectorThread thread, SelectionKey key);
 
@@ -45,6 +45,6 @@ public interface KeyAcceptor<T> {
 	 */
 	void close(SelectorExecutor executor, Callable<Void> closeTask);
 
-	Future<Void> getCloseFuture();
+	CallbackFuture<Void> getCloseFuture();
 
 }

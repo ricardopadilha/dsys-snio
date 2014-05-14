@@ -24,8 +24,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import net.dsys.commons.impl.future.MergingFuture;
-import net.dsys.commons.impl.future.SettableFuture;
+import net.dsys.commons.impl.future.MergingCallbackFuture;
+import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.commons.impl.lang.DaemonThreadFactory;
 import net.dsys.snio.api.pool.Acceptor;
 import net.dsys.snio.api.pool.Processor;
@@ -44,7 +44,7 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	private final SelectorThreadImpl reader;
 	private final SelectorThreadImpl writer;
 	private volatile boolean accepting;
-	private MergingFuture<Void> closeFuture;
+	private MergingCallbackFuture<Void> closeFuture;
 
 	SelectorExecutorImpl(final String name) {
 		this.executor = Executors.newFixedThreadPool(THREAD_COUNT, new DaemonThreadFactory(name));
@@ -109,7 +109,8 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void cancelBind(final SelectionKey key, final SettableFuture<Void> future, final Callable<Void> task) {
+	public void cancelBind(final SelectionKey key, final SettableCallbackFuture<Void> future,
+			final Callable<Void> task) {
 		if (key != null) {
 			accepter.cancel(key, future, task);
 		} else {
@@ -126,8 +127,8 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void cancelConnect(final SelectionKey readKey, final SettableFuture<Void> readFuture,
-			final SelectionKey writeKey, final SettableFuture<Void> writeFuture) {
+	public void cancelConnect(final SelectionKey readKey, final SettableCallbackFuture<Void> readFuture,
+			final SelectionKey writeKey, final SettableCallbackFuture<Void> writeFuture) {
 		if (readKey != null) {
 			reader.cancel(readKey, readFuture);
 		} else {
@@ -150,9 +151,9 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 		executor.shutdown();
 	}
 
-	MergingFuture<Void> getCloseFuture() {
+	MergingCallbackFuture<Void> getCloseFuture() {
 		if (closeFuture == null) {
-			final MergingFuture.Builder<Void> builder = MergingFuture.builder();
+			final MergingCallbackFuture.Builder<Void> builder = MergingCallbackFuture.builder();
 			builder.add(writer.getCloseFuture());
 			builder.add(reader.getCloseFuture());
 			/**
