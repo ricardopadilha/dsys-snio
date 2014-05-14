@@ -30,6 +30,7 @@ import net.dsys.commons.impl.future.CountDownFuture;
 import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.impl.codec.DeflateCodec;
 import net.dsys.snio.impl.codec.LZ4CompressionCodec;
+import net.dsys.snio.impl.codec.ShortCRC32Codec;
 import net.dsys.snio.impl.codec.ShortHeaderCodec;
 
 import org.junit.Test;
@@ -110,6 +111,19 @@ public final class CodecTest {
 	@SuppressWarnings("static-method")
 	public void testLengthHeader() throws Exception {
 		final MessageCodec codec = new ShortHeaderCodec(0xFFFD);
+		edgeTest(codec, 0, codec.getBodyLength() + 1);
+		testCodec(codec.getBodyLength(), new CodecFactory() {
+			@Override
+			public MessageCodec newInstance(final int length) {
+				return new ShortHeaderCodec(length);
+			}
+		});
+	}
+
+	@Test
+	@SuppressWarnings("static-method")
+	public void testCRC32() throws Exception {
+		final MessageCodec codec = new ShortCRC32Codec(0xFFF9);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override

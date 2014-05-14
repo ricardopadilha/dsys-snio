@@ -47,6 +47,7 @@ public final class MaxTputCodec implements MessageCodec {
 	private final MessageCodec compressed;
 	private final int headerLength;
 	private final int bodyLength;
+	private final int footerLength;
 	private final int frameLength;
 	private final long bandwidthThreshold; // in bits per second
 
@@ -63,7 +64,8 @@ public final class MaxTputCodec implements MessageCodec {
 		this.compressed = new LZ4CompressionCodec(bodyLength);
 		this.bodyLength = Math.min(plain.getBodyLength(), compressed.getBodyLength()) - HEADER_LENGTH;
 		this.headerLength = HEADER_LENGTH + Math.max(plain.getHeaderLength(), compressed.getHeaderLength());
-		this.frameLength = headerLength + bodyLength;
+		this.footerLength = Math.max(plain.getFooterLength(), compressed.getFooterLength());
+		this.frameLength = headerLength + this.bodyLength + footerLength;
 		this.bandwidthThreshold = bandwidthThreshold;
 		this.last = System.nanoTime();
 		this.bytes = 0;
@@ -92,6 +94,14 @@ public final class MaxTputCodec implements MessageCodec {
 	@Override
 	public int getBodyLength() {
 		return bodyLength;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getFooterLength() {
+		return footerLength;
 	}
 
 	/**

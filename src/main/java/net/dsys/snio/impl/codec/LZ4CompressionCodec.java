@@ -39,6 +39,7 @@ public final class LZ4CompressionCodec implements MessageCodec {
 
 	private static final int SHORT_LENGTH = Short.SIZE / Byte.SIZE;
 	private static final int HEADER_LENGTH = 2 * SHORT_LENGTH;
+	private static final int FOOTER_LENGTH = 0;
 	/**
 	 * LZ4 has a 275 byte overhead in 65535 bytes, which translates into an
 	 * effective 65260 bytes payload.
@@ -48,6 +49,7 @@ public final class LZ4CompressionCodec implements MessageCodec {
 	private final int headerLength;
 	private final int bodyLength;
 	private final int compressedLength;
+	private final int footerLength;
 	private final int frameLength;
 	private final LZ4Compressor compressor;
 	private final LZ4FastDecompressor decompressor;
@@ -63,16 +65,17 @@ public final class LZ4CompressionCodec implements MessageCodec {
 		final LZ4Factory factory = LZ4Factory.fastestInstance();
 		this.compressor = factory.fastCompressor();
 		this.decompressor = factory.fastDecompressor();
-		this.compressedLength = compressor.maxCompressedLength(bodyLength);
 
 		this.bodyLength = bodyLength;
 		this.headerLength = HEADER_LENGTH;
-		this.frameLength = headerLength + compressedLength;
+		this.compressedLength = compressor.maxCompressedLength(bodyLength);
+		this.footerLength = FOOTER_LENGTH;
+		this.frameLength = headerLength + compressedLength + footerLength;
 
-		this.compressInput = new byte[bodyLength];
+		this.compressInput = new byte[this.bodyLength];
 		this.compressOutput = new byte[compressedLength];
 		this.decompressInput = new byte[compressedLength];
-		this.decompressOutput = new byte[bodyLength];
+		this.decompressOutput = new byte[this.bodyLength];
 	}
 
 	/**
@@ -97,6 +100,14 @@ public final class LZ4CompressionCodec implements MessageCodec {
 	@Override
 	public int getBodyLength() {
 		return bodyLength;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getFooterLength() {
+		return footerLength;
 	}
 
 	/**

@@ -41,11 +41,13 @@ public final class DeflateCodec implements MessageCodec {
 
 	private static final int SHORT_LENGTH = Short.SIZE / Byte.SIZE;
 	private static final int HEADER_LENGTH = SHORT_LENGTH;
+	private static final int FOOTER_LENGTH = 0;
 	private static final int MAX_BODY_LENGTH = 0xFFE5; // 65509
 
 	private final int headerLength;
 	private final int bodyLength;
 	private final int compressedLength;
+	private final int footerLength;
 	private final int frameLength;
 	private final Deflater deflater;
 	private final Inflater inflater;
@@ -60,11 +62,12 @@ public final class DeflateCodec implements MessageCodec {
 		}
 		this.deflater = new Deflater(Deflater.BEST_SPEED, false);
 		this.inflater = new Inflater(false);
-		this.compressedLength = maxCompressedLength(bodyLength);
 
-		this.bodyLength = bodyLength;
 		this.headerLength = HEADER_LENGTH;
-		this.frameLength = headerLength + compressedLength;
+		this.bodyLength = bodyLength;
+		this.compressedLength = maxCompressedLength(bodyLength);
+		this.footerLength = FOOTER_LENGTH;
+		this.frameLength = headerLength + compressedLength + footerLength;
 
 		this.deflaterInput = new byte[bodyLength];
 		this.deflaterOutput = new byte[compressedLength];
@@ -86,6 +89,14 @@ public final class DeflateCodec implements MessageCodec {
 	@Override
 	public int getHeaderLength() {
 		return headerLength;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getFooterLength() {
+		return footerLength;
 	}
 
 	/**

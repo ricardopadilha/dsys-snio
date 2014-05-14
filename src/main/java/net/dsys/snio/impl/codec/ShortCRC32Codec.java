@@ -18,37 +18,40 @@ package net.dsys.snio.impl.codec;
 
 import java.nio.ByteBuffer;
 
+import net.dsys.commons.impl.lang.CRC32;
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
- * Simple frame encoding which just adds an unsigned short length field as a
- * header. Messages cannot be longer than 65533 bytes. Thread-safe.
+ * Frame encoding with a CRC32 checksum at the end.
+ * Messages cannot be longer than 65529 bytes. Thread-safe.
  * 
  * @author Ricardo Padilha
  */
-public final class ShortHeaderCodec implements MessageCodec {
+public final class ShortCRC32Codec implements MessageCodec {
 
 	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
 
 	private static final int HEADER_LENGTH = Short.SIZE / Byte.SIZE;
-	private static final int FOOTER_LENGTH = 0;
-	private static final int MAX_BODY_LENGTH = 0xFFFD; // 65533
+	private static final int FOOTER_LENGTH = Integer.SIZE / Byte.SIZE;
+	private static final int MAX_BODY_LENGTH = 0xFFF9; // 65529
 
 	private final int headerLength;
 	private final int bodyLength;
 	private final int footerLength;
 	private final int frameLength;
+	private final int tailLength;
 
-	public ShortHeaderCodec(final int bodyLength) {
+	public ShortCRC32Codec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
-			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0xFFFD: " + bodyLength);
+			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0xFFF9: " + bodyLength);
 		}
-		this.headerLength = HEADER_LENGTH;
 		this.bodyLength = bodyLength;
+		this.headerLength = HEADER_LENGTH;
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + this.bodyLength + footerLength;
+		this.tailLength = this.bodyLength + footerLength;
 	}
 
 	/**
@@ -56,7 +59,7 @@ public final class ShortHeaderCodec implements MessageCodec {
 	 */
 	@Override
 	public MessageCodec clone() {
-		return new ShortHeaderCodec(bodyLength);
+		return new ShortCRC32Codec(bodyLength);
 	}
 
 	/**
@@ -114,9 +117,12 @@ public final class ShortHeaderCodec implements MessageCodec {
 	 */
 	@Override
 	public void put(final ByteBuffer in, final ByteBuffer out) {
-		final int length = in.remaining();
+		final int pos = out.position();
+		final int length = in.remaining() + FOOTER_LENGTH;
 		out.putShort((short) length);
 		out.put(in);
+		final int crc = CRC32.digest(in, pos, out.position());
+		out.putInt(crc);
 	}
 
 	/**
@@ -129,7 +135,7 @@ public final class ShortHeaderCodec implements MessageCodec {
 			return false;
 		}
 		final int length = in.getShort(in.position()) & UNSIGNED_SHORT_MASK; // unsigned short
-		if (length < 1 || length > bodyLength) {
+		if (length < 1 || length > tailLength) {
 			throw new InvalidLengthException(length);
 		}
 		return (rem >= headerLength + length);
@@ -141,14 +147,20 @@ public final class ShortHeaderCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void get(final ByteBuffer in, final ByteBuffer out) {
+	public void get(final ByteBuffer in, final ByteBuffer out) throws InvalidEncodingException {
+		final int pos = out.position();
 		final int start = in.position();
 		final int length = in.getShort() & UNSIGNED_SHORT_MASK; // unsigned short
-		final int end = start + headerLength + length;
+		final int end = start + headerLength + length - footerLength;
 		final int lim = in.limit();
 		in.limit(end);
 		out.put(in);
 		in.limit(lim);
+		final int calculated = CRC32.digest(out, pos, out.position());
+		final int received = in.getInt();
+		if (calculated != received) {
+			throw new InvalidEncodingException("mismatching CRC32");
+		}
 	}
 
 	/**

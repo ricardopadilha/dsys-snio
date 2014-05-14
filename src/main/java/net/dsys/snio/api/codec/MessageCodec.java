@@ -41,6 +41,11 @@ public interface MessageCodec extends Cloneable {
 	int getBodyLength();
 
 	/**
+	 * @return maximum length of the message footer
+	 */
+	int getFooterLength();
+
+	/**
 	 * @return maximum frame length
 	 */
 	int getFrameLength();
