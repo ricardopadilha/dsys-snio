@@ -23,6 +23,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Reference implementation for oneway tests. It takes a single blocking socket
@@ -49,9 +50,7 @@ public final class RefOnewayServer {
 		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(createAppHandler(channel, length));
 
-		synchronized (executor) {
-			executor.wait();
-		}
+		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 		executor.shutdown();
 	}
 
