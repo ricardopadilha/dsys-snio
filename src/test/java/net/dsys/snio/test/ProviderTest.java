@@ -50,6 +50,10 @@ public final class ProviderTest {
 	private MessageBufferConsumer<ByteBuffer> in;
 	private ExecutorService executor;
 
+	public ProviderTest() {
+		super();
+	}
+
 	@Before
 	public void setUp() throws Exception {
 		factory = new ByteBufferFactory(Integer.SIZE / Byte.SIZE);
@@ -80,7 +84,7 @@ public final class ProviderTest {
 					for (int i = 0; i < REPS; i++) {
 						final long seq = out.acquire();
 						try {
-							ByteBuffer bb = out.get(seq);
+							final ByteBuffer bb = out.get(seq);
 							bb.clear();
 							bb.putInt(i);
 							bb.flip();
@@ -106,12 +110,12 @@ public final class ProviderTest {
 					for (int i = 0; i < REPS; i++) {
 						final long seq = in.acquire();
 						try {
-							ByteBuffer bb = in.get(seq);
+							final ByteBuffer bb = in.get(seq);
 							final int pos = bb.position();
 							if (pos != 0) {
 								System.out.println(i + " " + pos);
 							}
-							int n = bb.getInt();
+							final int n = bb.getInt();
 							assertEquals(i, n);
 							final Integer a = (Integer) in.attachment(seq);
 							assertEquals(i, a.intValue());

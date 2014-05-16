@@ -32,7 +32,7 @@ public final class EchoProducer implements MessageProducer<ByteBuffer> {
 //	private static final int INT_LENGTH = 4;
 	private final InetSocketAddress address;
 	private final int limit;
-	private int i = 0;
+	private int i;
 
 	public EchoProducer() {
 		this(-1, null);
@@ -49,6 +49,7 @@ public final class EchoProducer implements MessageProducer<ByteBuffer> {
 	public EchoProducer(final int limit, final InetSocketAddress address) {
 		this.limit = limit;
 		this.address = address;
+		this.i = 0;
 	}
 
 	@Override

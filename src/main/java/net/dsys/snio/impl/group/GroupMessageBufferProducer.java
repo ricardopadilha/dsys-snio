@@ -118,7 +118,8 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 			if (buffers.length != data.size()) {
 				throw new IllegalArgumentException("buffers.length != data.size()");
 			}
-			for (int i = 0, k = buffers.length; i < k; i++) {
+			final int k = buffers.length;
+			for (int i = 0; i < k; i++) {
 				buffers[i].attach(sequence, data.get(i));
 			}
 		} else {

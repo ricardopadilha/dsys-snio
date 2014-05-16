@@ -66,6 +66,10 @@ public final class CloseTest {
 	private SelectorPool pool;
 	private SSLContext context;
 
+	public CloseTest() {
+		super();
+	}
+
 	@Before
 	public void setUp() throws Exception {
 		pool = SelectorPools.open("test", 1);
@@ -537,7 +541,7 @@ public final class CloseTest {
 					latch.await();
 					out.acquire();
 					future.fail(new AssertionError("able to acquire despite remote endpoint being closed"));
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					future.success(null);
 				}
 			}
@@ -598,7 +602,7 @@ public final class CloseTest {
 					final MessageBufferConsumer<ByteBuffer> in = channel.getInputBuffer();
 					in.acquire();
 					future.fail(new AssertionError("able to acquire despite remote endpoint being closed"));
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					future.success(null);
 				}
 			}

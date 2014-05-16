@@ -243,5 +243,4 @@ public final class RingBufferIterator<E> {
 		}
 		cursor++;
 	}
-
 }

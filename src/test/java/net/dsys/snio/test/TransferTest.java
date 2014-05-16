@@ -68,6 +68,10 @@ public final class TransferTest {
 	private SocketAddress local;
 	private SocketAddress remote;
 
+	public TransferTest() {
+		super();
+	}
+
 	@Before
 	public void setUp() throws Exception {
 		pool = SelectorPools.open("test", 1);

@@ -114,7 +114,8 @@ final class GroupChannel<T> implements MessageChannel<T> {
 		if (group.size() != channels.length) {
 			throw new IllegalArgumentException("local.size() != channels.length");
 		}
-		for (int i = 0, k = channels.length; i < k; i++) {
+		final int k = channels.length;
+		for (int i = 0; i < k; i++) {
 			channels[i].bind(group.get(i));
 		}
 		return this;

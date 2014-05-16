@@ -31,16 +31,6 @@ import net.dsys.snio.api.handler.MessageConsumerFactory;
  */
 public final class EchoConsumer implements MessageConsumer<ByteBuffer> {
 
-	public static MessageConsumerFactory<ByteBuffer> createFactory() {
-		return new MessageConsumerFactory<ByteBuffer>() {
-			@Override
-			public MessageConsumer<ByteBuffer> newInstance(final SocketAddress remote,
-					final MessageChannel<ByteBuffer> channel) {
-				return new EchoConsumer();
-			}
-		};
-	}
-
 	private static final boolean CHECK = false;
 	private static final long SECOND = 1_000_000_000L;
 
@@ -58,6 +48,16 @@ public final class EchoConsumer implements MessageConsumer<ByteBuffer> {
 		this.start = 0;
 		this.counter = 0;
 		this.n = -1;
+	}
+
+	public static MessageConsumerFactory<ByteBuffer> createFactory() {
+		return new MessageConsumerFactory<ByteBuffer>() {
+			@Override
+			public MessageConsumer<ByteBuffer> newInstance(final SocketAddress remote,
+					final MessageChannel<ByteBuffer> channel) {
+				return new EchoConsumer();
+			}
+		};
 	}
 
 	/**

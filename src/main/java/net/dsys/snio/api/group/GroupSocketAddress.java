@@ -39,7 +39,8 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 		if (addresses.length == 0) {
 			throw new IllegalArgumentException("addresses.length == 0");
 		}
-		for (int i = 0, k = addresses.length; i < k; i++) {
+		final int k = addresses.length;
+		for (int i = 0; i < k; i++) {
 			if (addresses[i] == null) {
 				throw new NullPointerException("addresses[" + i + "] == null");
 			}

@@ -70,7 +70,8 @@ public final class TCPOnewayClient {
 			return defaultValue;
 		}
 		final String key = "--" + name;
-		for (int i = 0, k = args.length - 1; i < k; i++) {
+		final int k = args.length - 1;
+		for (int i = 0; i < k; i++) {
 			if (key.equals(args[i])) {
 				return args[i + 1];
 			}

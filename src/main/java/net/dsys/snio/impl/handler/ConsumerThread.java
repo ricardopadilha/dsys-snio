@@ -39,25 +39,6 @@ import net.dsys.snio.api.handler.MessageConsumer;
  */
 final class ConsumerThread<T> implements Interruptible {
 
-	static <T> ConsumerThreadFactory<T> createAsyncFactory(final Factory<T> factory, final Copier<T> copier,
-			final Cleaner<T> cleaner) {
-		return new ConsumerThreadFactory<T>() {
-			@Override
-			public Runnable newInstance(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
-				return new ConsumerThread<>(in, consumer, factory.newInstance(), copier, cleaner);
-			}
-		};
-	}
-
-	static <T> ConsumerThreadFactory<T> createSyncFactory() {
-		return new ConsumerThreadFactory<T>() {
-			@Override
-			public Runnable newInstance(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
-				return new ConsumerThread<>(in, consumer);
-			}
-		};
-	}
-
 	private final ExecutionType type;
 	private final MessageBufferConsumer<T> in;
 	private final MessageConsumer<T> consumer;
@@ -107,6 +88,26 @@ final class ConsumerThread<T> implements Interruptible {
 		this.cleaner = null;
 		this.interrupted = new AtomicBoolean();
 	}
+
+	static <T> ConsumerThreadFactory<T> createAsyncFactory(final Factory<T> factory, final Copier<T> copier,
+			final Cleaner<T> cleaner) {
+		return new ConsumerThreadFactory<T>() {
+			@Override
+			public Runnable newInstance(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
+				return new ConsumerThread<>(in, consumer, factory.newInstance(), copier, cleaner);
+			}
+		};
+	}
+
+	static <T> ConsumerThreadFactory<T> createSyncFactory() {
+		return new ConsumerThreadFactory<T>() {
+			@Override
+			public Runnable newInstance(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
+				return new ConsumerThread<>(in, consumer);
+			}
+		};
+	}
+
 
 	/**
 	 * {@inheritDoc}

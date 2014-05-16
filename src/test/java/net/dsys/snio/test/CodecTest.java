@@ -40,6 +40,10 @@ import org.junit.Test;
  */
 public final class CodecTest {
 
+	public CodecTest() {
+		super();
+	}
+
 	static void edgeTest(final MessageCodec codec, final int min, final int max) {
 		final ByteBuffer zero = ByteBuffer.allocate(min);
 		assertFalse(codec.isValid(zero));
@@ -68,7 +72,8 @@ public final class CodecTest {
 		final CountDownFuture<Void> future = new CountDownFuture<>(latch, null);
 		final Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
 		final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-		for (int i = 1, k = reps / 2; i <= k; i++) {
+		final int k = reps / 2;
+		for (int i = 1; i <= k; i++) {
 			semaphore.acquire();
 			final int length = i;
 			final MessageCodec codec = factory.newInstance(length);

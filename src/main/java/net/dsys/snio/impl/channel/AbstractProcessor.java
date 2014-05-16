@@ -234,7 +234,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		}
 		try {
 			return ((SocketChannel) channel).getLocalAddress();
-		} catch (ClassCastException | IOException e) {
+		} catch (final ClassCastException | IOException e) {
 			return null;
 		}
 	}
@@ -246,7 +246,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		}
 		try {
 			return ((SocketChannel) channel).getRemoteAddress();
-		} catch (ClassCastException | IOException e) {
+		} catch (final ClassCastException | IOException e) {
 			return null;
 		}
 	}
