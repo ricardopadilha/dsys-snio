@@ -39,6 +39,18 @@ public interface AsyncBindable {
 	NetworkChannel bind(SocketAddress local) throws IOException;
 
 	/**
+	 * The {@code backlog} parameter is the maximum number of pending
+	 * connections on the socket. Its exact semantics are implementation
+	 * specific. In particular, an implementation may impose a maximum length or
+	 * may choose to ignore the parameter altogether. If the {@code backlog}
+	 * parameter has the value {@code 0}, or a negative value, then an
+	 * implementation specific default is used.
+	 * 
+	 * @see NetworkChannel#bind(SocketAddress)
+	 */
+	NetworkChannel bind(SocketAddress local, int backlog) throws IOException;
+
+	/**
 	 * @return a {@link Future} that is done when this channel is bound. Any
 	 *         exceptions raised during the binding is returned by this future.
 	 */

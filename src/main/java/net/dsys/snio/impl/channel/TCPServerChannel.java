@@ -19,6 +19,7 @@ package net.dsys.snio.impl.channel;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -83,6 +84,17 @@ final class TCPServerChannel<T> implements MessageServerChannel<T>, Acceptor {
 	public TCPServerChannel<T> bind(final SocketAddress local) throws IOException {
 		assert isOpen();
 		channel.bind(local);
+		selector.bind(channel, this);
+		return this;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public NetworkChannel bind(final SocketAddress local, final int backlog) throws IOException {
+		assert isOpen();
+		channel.bind(local, backlog);
 		selector.bind(channel, this);
 		return this;
 	}

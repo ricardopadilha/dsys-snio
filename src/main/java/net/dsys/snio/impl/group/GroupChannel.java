@@ -19,6 +19,7 @@ package net.dsys.snio.impl.group;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.nio.channels.NetworkChannel;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -117,6 +118,25 @@ final class GroupChannel<T> implements MessageChannel<T> {
 		final int k = channels.length;
 		for (int i = 0; i < k; i++) {
 			channels[i].bind(group.get(i));
+		}
+		return this;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public NetworkChannel bind(final SocketAddress local, final int backlog) throws IOException {
+		if (!(local instanceof GroupSocketAddress)) {
+			throw new IllegalArgumentException("GroupChannel can only bind to a GroupSocketAddress");
+		}
+		final GroupSocketAddress group = (GroupSocketAddress) local;
+		if (group.size() != channels.length) {
+			throw new IllegalArgumentException("local.size() != channels.length");
+		}
+		final int k = channels.length;
+		for (int i = 0; i < k; i++) {
+			channels[i].bind(group.get(i), backlog);
 		}
 		return this;
 	}

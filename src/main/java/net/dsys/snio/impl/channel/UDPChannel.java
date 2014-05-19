@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.NetworkChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -107,6 +108,16 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 		}
 		selector.register(channel, this);
 		return this;
+	}
+
+	/**
+	 * Same as {@link #bind(SocketAddress)}, i.e., {@code backlog} is ignored.
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public NetworkChannel bind(final SocketAddress local, final int backlog) throws IOException {
+		return bind(local);
 	}
 
 	/**

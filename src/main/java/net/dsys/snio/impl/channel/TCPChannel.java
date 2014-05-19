@@ -19,6 +19,7 @@ package net.dsys.snio.impl.channel;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -97,6 +98,16 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 		assert isOpen();
 		channel.bind(local);
 		return this;
+	}
+
+	/**
+	 * Same as {@link #bind(SocketAddress)}, i.e., {@code backlog} is ignored.
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public NetworkChannel bind(final SocketAddress local, final int backlog) throws IOException {
+		return bind(local);
 	}
 
 	/**
