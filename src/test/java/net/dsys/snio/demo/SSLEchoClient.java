@@ -32,7 +32,7 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
-import net.dsys.snio.impl.codec.LZ4CompressionCodec;
+import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -62,7 +62,7 @@ public final class SSLEchoClient {
 		final MessageChannel<ByteBuffer> client = MessageChannels.newSSLChannel()
 				.setContext(getContext())
 				.setPool(pool)
-				.setMessageCodec(new LZ4CompressionCodec(length))
+				.setMessageCodec(Codecs.getLZ4Compression(length))
 				.useRingBuffer()
 				.open();
 

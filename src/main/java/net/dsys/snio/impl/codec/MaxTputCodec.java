@@ -32,7 +32,7 @@ import net.dsys.snio.api.codec.MessageCodec;
  * @see LZ4CompressionCodec
  * @author Ricardo Padilha
  */
-public final class MaxTputCodec implements MessageCodec {
+final class MaxTputCodec implements MessageCodec {
 
 	private static final long BYTES_TO_BITS = 8;
 	private static final long NSEC_TO_SEC = 1_000_000_000;
@@ -56,7 +56,11 @@ public final class MaxTputCodec implements MessageCodec {
 	private long bytes;
 	private boolean usePlain;
 
-	public MaxTputCodec(final int bodyLength, final long bandwidthThreshold) {
+	MaxTputCodec(final long bandwidthThreshold) {
+		this(LZ4CompressionCodec.getMaxBodyLength(), bandwidthThreshold);
+	}
+
+	MaxTputCodec(final int bodyLength, final long bandwidthThreshold) {
 		if (bandwidthThreshold < 1) {
 			throw new IllegalArgumentException("bandwidthInBitsPerSecond < 1");
 		}
@@ -125,13 +129,13 @@ public final class MaxTputCodec implements MessageCodec {
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * @throws InvalidLengthException
 	 */
 	@Override
 	public boolean isValid(final ByteBuffer out) {
-		final int length = out.remaining();
-		return length > 0 && length <= bodyLength;
+		if (usePlain) {
+			return plain.isValid(out);
+		}
+		return compressed.isValid(out);
 	}
 
 	/**
@@ -156,7 +160,8 @@ public final class MaxTputCodec implements MessageCodec {
 		final long current = System.nanoTime();
 		final long delta = current - last;
 		if (delta >= NSEC_TO_MSEC) {
-			final long currentBandwidth = (bytes * BYTES_TO_BITS) * NSEC_TO_SEC / delta; // bits/sec
+			 // bits/sec
+			final long currentBandwidth = (bytes * BYTES_TO_BITS) * NSEC_TO_SEC / delta;
 			last = current;
 			bytes = 0;
 			if (currentBandwidth > bandwidthThreshold) {

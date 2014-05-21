@@ -26,12 +26,15 @@ import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
- * Simple frame encoding which just adds an unsigned short length field as a
- * header. Messages cannot be longer than 65509 bytes. Non thread-safe.
+ * Frame encoding that compresses messages using deflate. Messages cannot be
+ * longer than 65499 bytes to make sure that they will fit in an UDP datagram.
+ * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+ * different threads can encode and decode at the same time, but two threads
+ * cannot encode at the same time.
  * 
  * @author Ricardo Padilha
  */
-public final class DeflateCodec implements MessageCodec {
+final class DeflateCodec implements MessageCodec {
 
 	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
 
@@ -42,7 +45,12 @@ public final class DeflateCodec implements MessageCodec {
 	private static final int SHORT_LENGTH = Short.SIZE / Byte.SIZE;
 	private static final int HEADER_LENGTH = SHORT_LENGTH;
 	private static final int FOOTER_LENGTH = 0;
-	private static final int MAX_BODY_LENGTH = 0xFFE5; // 65509
+	/**
+	 * Deflate has a 26 byte overhead in 65525 bytes, which translates into an
+	 * effective 65499 bytes payload.
+	 */
+	private static final int MAX_DEFLATE_OVERHEAD = 26;
+	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH - MAX_DEFLATE_OVERHEAD;
 
 	private final int headerLength;
 	private final int bodyLength;
@@ -56,9 +64,16 @@ public final class DeflateCodec implements MessageCodec {
 	private final byte[] inflaterInput;
 	private final byte[] inflaterOutput;
 
-	public DeflateCodec(final int bodyLength) {
+	/**
+	 * Returns an instance for the maximum body length
+	 */
+	DeflateCodec() {
+		this(MAX_BODY_LENGTH);
+	}
+
+	DeflateCodec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
-			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0xFFE5: " + bodyLength);
+			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 65499: " + bodyLength);
 		}
 		this.deflater = new Deflater(Deflater.BEST_SPEED, false);
 		this.inflater = new Inflater(false);
@@ -68,11 +83,18 @@ public final class DeflateCodec implements MessageCodec {
 		this.compressedLength = maxCompressedLength(bodyLength);
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + compressedLength + footerLength;
+		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
+			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
+		}
 
 		this.deflaterInput = new byte[bodyLength];
 		this.deflaterOutput = new byte[compressedLength];
 		this.inflaterInput = new byte[compressedLength];
 		this.inflaterOutput = new byte[bodyLength];
+	}
+
+	static int getMaxBodyLength() {
+		return MAX_BODY_LENGTH;
 	}
 
 	/**
@@ -202,7 +224,7 @@ public final class DeflateCodec implements MessageCodec {
 	 */
 	@Override
 	public void get(final ByteBuffer in, final ByteBuffer out) throws InvalidEncodingException {
-		final int deflated = in.getShort() & UNSIGNED_SHORT_MASK; // unsigned short
+		final int deflated = in.getShort() & UNSIGNED_SHORT_MASK;
 
 		inflater.reset();
 		if (in.hasArray()) {

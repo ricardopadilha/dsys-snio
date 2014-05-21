@@ -28,12 +28,15 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
 /**
- * Simple frame encoding which just adds an unsigned short length field as a
- * header. Messages cannot be longer than 65260 bytes. Non thread-safe.
+ * Frame encoding that compresses messages using LZ4. Messages cannot be longer
+ * than 65252 bytes to make sure that they will fit in an UDP datagram.
+ * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+ * different threads can encode and decode at the same time, but two threads
+ * cannot encode at the same time.
  * 
  * @author Ricardo Padilha
  */
-public final class LZ4CompressionCodec implements MessageCodec {
+final class LZ4CompressionCodec implements MessageCodec {
 
 	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
 
@@ -41,10 +44,11 @@ public final class LZ4CompressionCodec implements MessageCodec {
 	private static final int HEADER_LENGTH = 2 * SHORT_LENGTH;
 	private static final int FOOTER_LENGTH = 0;
 	/**
-	 * LZ4 has a 275 byte overhead in 65535 bytes, which translates into an
-	 * effective 65260 bytes payload.
+	 * LZ4 has a 271 byte overhead in 65523 bytes, which translates into an
+	 * effective 65252 bytes payload.
 	 */
-	private static final int MAX_BODY_LENGTH = 0xFEEC;
+	private static final int MAX_LZ4_OVERHEAD = 271;
+	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH - MAX_LZ4_OVERHEAD;
 
 	private final int headerLength;
 	private final int bodyLength;
@@ -58,7 +62,14 @@ public final class LZ4CompressionCodec implements MessageCodec {
 	private final byte[] decompressInput;
 	private final byte[] decompressOutput;
 
-	public LZ4CompressionCodec(final int bodyLength) {
+	/**
+	 * Returns an instance for the maximum body length
+	 */
+	LZ4CompressionCodec() {
+		this(MAX_BODY_LENGTH);
+	}
+
+	LZ4CompressionCodec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
 			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0xFEEC: " + bodyLength);
 		}
@@ -71,11 +82,18 @@ public final class LZ4CompressionCodec implements MessageCodec {
 		this.compressedLength = compressor.maxCompressedLength(bodyLength);
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + compressedLength + footerLength;
+		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
+			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
+		}
 
 		this.compressInput = new byte[this.bodyLength];
 		this.compressOutput = new byte[compressedLength];
 		this.decompressInput = new byte[compressedLength];
 		this.decompressOutput = new byte[this.bodyLength];
+	}
+
+	static int getMaxBodyLength() {
+		return MAX_BODY_LENGTH;
 	}
 
 	/**
@@ -128,7 +146,8 @@ public final class LZ4CompressionCodec implements MessageCodec {
 
 	/**
 	 * {@inheritDoc}
-	 * @throws InvalidLengthException 
+	 * 
+	 * @throws InvalidLengthException
 	 */
 	@Override
 	public boolean isValid(final ByteBuffer out) {
@@ -192,11 +211,11 @@ public final class LZ4CompressionCodec implements MessageCodec {
 		if (rem < headerLength) {
 			return false;
 		}
-		final int compressed = (in.getShort(in.position()) & UNSIGNED_SHORT_MASK) - SHORT_LENGTH; // unsigned short
+		final int compressed = (in.getShort(in.position()) & UNSIGNED_SHORT_MASK) - SHORT_LENGTH;
 		if (compressed < 1 || compressed > compressedLength) {
 			throw new InvalidLengthException(compressed);
 		}
-		final int decompressed = in.getShort(in.position() + SHORT_LENGTH) & UNSIGNED_SHORT_MASK; // unsigned short
+		final int decompressed = in.getShort(in.position() + SHORT_LENGTH) & UNSIGNED_SHORT_MASK;
 		if (decompressed < 1 || decompressed > bodyLength) {
 			throw new InvalidLengthException(decompressed);
 		}
@@ -208,8 +227,8 @@ public final class LZ4CompressionCodec implements MessageCodec {
 	 */
 	@Override
 	public void get(final ByteBuffer in, final ByteBuffer out) throws InvalidEncodingException {
-		final int compressed = (in.getShort() & UNSIGNED_SHORT_MASK) - SHORT_LENGTH; // unsigned short
-		final int decompressed = in.getShort() & UNSIGNED_SHORT_MASK; // unsigned short
+		final int compressed = (in.getShort() & UNSIGNED_SHORT_MASK) - SHORT_LENGTH;
+		final int decompressed = in.getShort() & UNSIGNED_SHORT_MASK;
 
 		final byte[] arrayIn;
 		final int offsetIn;

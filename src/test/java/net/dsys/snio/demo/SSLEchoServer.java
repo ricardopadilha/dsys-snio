@@ -29,7 +29,7 @@ import net.dsys.snio.api.channel.MessageServerChannel;
 import net.dsys.snio.api.handler.MessageHandler;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageServerChannels;
-import net.dsys.snio.impl.codec.LZ4CompressionCodec;
+import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -59,7 +59,7 @@ public final class SSLEchoServer {
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newSSLServerChannel()
 				.setContext(getContext())
 				.setPool(pool)
-				.setMessageCodec(new LZ4CompressionCodec(length))
+				.setMessageCodec(Codecs.getLZ4Compression(length))
 				.useRingBuffer()
 				.open();
 

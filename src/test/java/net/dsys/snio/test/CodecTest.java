@@ -25,13 +25,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 import net.dsys.commons.impl.future.CountDownFuture;
 import net.dsys.snio.api.codec.MessageCodec;
-import net.dsys.snio.impl.codec.DeflateCodec;
-import net.dsys.snio.impl.codec.LZ4CompressionCodec;
-import net.dsys.snio.impl.codec.ShortCRC32Codec;
-import net.dsys.snio.impl.codec.ShortHeaderCodec;
+import net.dsys.snio.impl.codec.Codecs;
 
 import org.junit.Test;
 
@@ -52,22 +50,43 @@ public final class CodecTest {
 	}
 
 	static void testCodec(final MessageCodec codec, final int length, final Random rnd) throws Exception {
-		final ByteBuffer in = ByteBuffer.allocate(length);
-		final ByteBuffer temp = ByteBuffer.allocate(codec.getFrameLength());
-		final ByteBuffer out = ByteBuffer.allocate(length);
-		rnd.nextBytes(in.array());
-		codec.put(in, temp);
-		in.flip();
-		temp.flip();
-		codec.get(temp, out);
-		temp.clear();
-		out.flip();
-		assertEquals(in, out);
+		final int len = 2 * length + codec.getFrameLength();
+		final ByteBuffer heap = ByteBuffer.allocate(len);
+		final ByteBuffer hin = ((ByteBuffer) heap.limit(length)).slice();
+		final ByteBuffer hout = ((ByteBuffer) heap.position(length).limit(2 * length)).slice();
+		final ByteBuffer htemp = ((ByteBuffer) heap.position(2 * length).limit(heap.capacity())).slice();
+		while (hin.remaining() > 0) {
+			hin.put((byte) rnd.nextInt());
+		}
+		hin.flip();
+		codec.put(hin, htemp);
+		hin.flip();
+		htemp.flip();
+		codec.get(htemp, hout);
+		htemp.clear();
+		hout.flip();
+		assertEquals(hin, hout);
+
+		final ByteBuffer direct = ByteBuffer.allocateDirect(len);
+		final ByteBuffer din = ((ByteBuffer) direct.limit(length)).slice();
+		final ByteBuffer dout = ((ByteBuffer) direct.position(length).limit(2 * length)).slice();
+		final ByteBuffer dtemp = ((ByteBuffer) direct.position(2 * length).limit(direct.capacity())).slice();
+		while (din.remaining() > 0) {
+			din.put((byte) rnd.nextInt());
+		}
+		din.flip();
+		codec.put(din, dtemp);
+		din.flip();
+		dtemp.flip();
+		codec.get(dtemp, dout);
+		dtemp.clear();
+		dout.flip();
+		assertEquals(din, dout);
 	}
 
 	private static void testCodec(final int maxLength, final CodecFactory factory) throws Exception {
 		final int reps = 2000;
-		final Random rnd = new Random();
+		final Random rnd = ThreadLocalRandom.current();
 		final CountDownLatch latch = new CountDownLatch(reps);
 		final CountDownFuture<Void> future = new CountDownFuture<>(latch, null);
 		final Semaphore semaphore = new Semaphore(Runtime.getRuntime().availableProcessors());
@@ -115,12 +134,25 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testLengthHeader() throws Exception {
-		final MessageCodec codec = new ShortHeaderCodec(0xFFFD);
+		final MessageCodec codec = Codecs.getDefault();
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
 			public MessageCodec newInstance(final int length) {
-				return new ShortHeaderCodec(length);
+				return Codecs.getDefault(length);
+			}
+		});
+	}
+
+	@Test
+	@SuppressWarnings("static-method")
+	public void testAdler32() throws Exception {
+		final MessageCodec codec = Codecs.getAdler32Checksum();
+		edgeTest(codec, 0, codec.getBodyLength() + 1);
+		testCodec(codec.getBodyLength(), new CodecFactory() {
+			@Override
+			public MessageCodec newInstance(final int length) {
+				return Codecs.getAdler32Checksum(length);
 			}
 		});
 	}
@@ -128,12 +160,25 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testCRC32() throws Exception {
-		final MessageCodec codec = new ShortCRC32Codec(0xFFF9);
+		final MessageCodec codec = Codecs.getCRC32Checksum();
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
 			public MessageCodec newInstance(final int length) {
-				return new ShortHeaderCodec(length);
+				return Codecs.getCRC32Checksum(length);
+			}
+		});
+	}
+
+	@Test
+	@SuppressWarnings("static-method")
+	public void testXXHash() throws Exception {
+		final MessageCodec codec = Codecs.getXXHashChecksum();
+		edgeTest(codec, 0, codec.getBodyLength() + 1);
+		testCodec(codec.getBodyLength(), new CodecFactory() {
+			@Override
+			public MessageCodec newInstance(final int length) {
+				return Codecs.getXXHashChecksum(length);
 			}
 		});
 	}
@@ -141,12 +186,12 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testDeflate() throws Exception {
-		final MessageCodec codec = new DeflateCodec(0xFFE5);
+		final MessageCodec codec = Codecs.getDeflateCompression();
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
 			public MessageCodec newInstance(final int length) {
-				return new DeflateCodec(length);
+				return Codecs.getDeflateCompression(length);
 			}
 		});
 	}
@@ -154,12 +199,12 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testLZ4() throws Exception {
-		final MessageCodec codec = new LZ4CompressionCodec(0xFEEC);
+		final MessageCodec codec = Codecs.getLZ4Compression();
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
 			public MessageCodec newInstance(final int length) {
-				return new LZ4CompressionCodec(length);
+				return Codecs.getLZ4Compression(length);
 			}
 		});
 	}

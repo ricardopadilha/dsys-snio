@@ -31,7 +31,7 @@ import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.buffer.BlockingQueueProvider;
 import net.dsys.snio.impl.buffer.RingBufferProvider;
-import net.dsys.snio.impl.codec.ShortHeaderCodec;
+import net.dsys.snio.impl.codec.Codecs;
 
 /**
  * @author Ricardo Padilha
@@ -119,7 +119,7 @@ public abstract class AbstractBuilder<S, T> {
 		if (length < 1) {
 			throw new IllegalArgumentException("length < 1");
 		}
-		this.codec = new ShortHeaderCodec(length);
+		this.codec = Codecs.getDefault(length);
 		return this;
 	}
 
