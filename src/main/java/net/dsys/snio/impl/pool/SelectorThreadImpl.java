@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.pool.Acceptor;
@@ -147,7 +148,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		} else if (attach instanceof Acceptor) {
 			((Acceptor) attach).close();
 		} else {
-			throw new AssertionError("Unknown attachment type: " + attach);
+			throw new Bug("Unknown attachment type: " + attach);
 		}
 	}
 
@@ -170,7 +171,7 @@ final class SelectorThreadImpl implements SelectorThread {
 			loop = new WriteLoop(selector, newOps, ops, newKeys, keys, SelectionKey.OP_WRITE);
 			break;
 		default:
-			throw new AssertionError("Unsupported selection type: " + type);
+			throw new Bug("Unsupported selection type: " + type);
 		}
 		return loop;
 	}

@@ -21,6 +21,7 @@ import static net.dsys.snio.impl.handler.ExecutionType.ZERO_COPY;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.lang.Cleaner;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.api.lang.Interruptible;
@@ -110,7 +111,7 @@ final class ProducerThread<T> implements Interruptible {
 			break;
 		}
 		default: {
-			throw new AssertionError("Unsuppported ThreadType: " + type);
+			throw new Bug("Unsuppported ThreadType: " + type);
 		}
 	}
 }

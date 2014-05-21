@@ -16,6 +16,7 @@
 
 package net.dsys.snio.impl.buffer;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.pool.KeyProcessor;
 
 import com.lmax.disruptor.AlertException;
@@ -64,7 +65,7 @@ public final class WakeupWaitStrategy implements WaitStrategy {
 	@Override
 	public void signalAllWhenBlocking() {
 		if (processor == null) {
-			throw new AssertionError("processor == null");
+			throw new Bug("processor == null");
 		}
 		processor.wakeupWriter();
 	}

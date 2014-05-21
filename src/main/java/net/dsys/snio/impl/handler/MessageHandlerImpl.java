@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.MessageChannel;
@@ -115,7 +116,7 @@ final class MessageHandlerImpl<T> implements MessageHandler<T> {
 				}
 				break;
 			default: {
-				throw new AssertionError("Unsupported HandlerType + " + type);
+				throw new Bug("Unsupported HandlerType + " + type);
 			}
 		}
 	}

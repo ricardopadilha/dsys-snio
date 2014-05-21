@@ -18,6 +18,7 @@ package net.dsys.snio.impl.codec;
 
 import java.nio.ByteBuffer;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.InvalidMessageException;
@@ -188,7 +189,7 @@ final class LZ4CompressionCodec implements MessageCodec {
 		try {
 			compressed = compressor.compress(arrayIn, offsetIn, decompressed, arrayOut, offsetOut);
 			if (compressed < 1 || compressed > compressedLength) {
-				throw new AssertionError("Unexpected compressed size: " + compressed);
+				throw new Bug("Unexpected compressed size: " + compressed);
 			}
 		} catch (final LZ4Exception e) {
 			throw new InvalidMessageException(e);

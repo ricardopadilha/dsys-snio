@@ -23,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.MergingCallbackFuture;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
@@ -101,7 +102,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 				this.readKey = key;
 				readRegistered(key);
 				if (connectReadFuture.isDone()) {
-					throw new AssertionError("connectFuture.isDone() while register");
+					throw new Bug("connectFuture.isDone() while register");
 				}
 				connectReadFuture.success(null);
 				break;
@@ -111,7 +112,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 				this.writeKey = key;
 				writeRegistered(key);
 				if (connectWriteFuture.isDone()) {
-					throw new AssertionError("connectFuture.isDone() while register");
+					throw new Bug("connectFuture.isDone() while register");
 				}
 				connectWriteFuture.success(null);
 				break;
@@ -121,7 +122,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 				break;
 			}
 			default: {
-				throw new AssertionError("Unsupported SelectionType registered: " + String.valueOf(type));
+				throw new Bug("Unsupported SelectionType registered: " + String.valueOf(type));
 			}
 		}
 	}

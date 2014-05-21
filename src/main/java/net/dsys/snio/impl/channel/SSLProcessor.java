@@ -34,6 +34,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -213,7 +214,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 				}
 				default: {
 					// some status code that is not known
-					throw new AssertionError("Unsupported SSLEngineResult.Status: " + result.getStatus());
+					throw new Bug("Unsupported SSLEngineResult.Status: " + result.getStatus());
 				}
 			}
 		}
@@ -334,7 +335,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 				case BUFFER_UNDERFLOW:
 				default: {
 					// both cases are illegal here
-					throw new AssertionError("Unsupported SSLEngineResult.Status: " + result.getStatus());
+					throw new Bug("Unsupported SSLEngineResult.Status: " + result.getStatus());
 				}
 			}
 		}

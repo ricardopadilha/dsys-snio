@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.lang.Cleaner;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.api.lang.Factory;
@@ -191,7 +192,7 @@ public final class MessageHandlers {
 				break;
 			}
 			default: {
-				throw new AssertionError("Unsupported ThreadType: " + threadType);
+				throw new Bug("Unsupported ThreadType: " + threadType);
 			}
 			}
 			final MessageHandler<ByteBuffer> handler;
@@ -205,7 +206,7 @@ public final class MessageHandlers {
 				break;
 			}
 			default: {
-				throw new AssertionError("Unsupported HandlerType: " + handlerType);
+				throw new Bug("Unsupported HandlerType: " + handlerType);
 			}
 			}
 			return handler;

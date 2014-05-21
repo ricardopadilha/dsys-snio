@@ -21,6 +21,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.MessageCodec;
@@ -189,14 +190,14 @@ final class DeflateCodec implements MessageCodec {
 			final int remaining = out.remaining() - HEADER_LENGTH;
 			final int deflated = deflater.deflate(out.array(), offset, remaining);
 			if (deflated < 1 || deflated > compressedLength) {
-				throw new AssertionError("Unexpected deflated size: " + deflated);
+				throw new Bug("Unexpected deflated size: " + deflated);
 			}
 			out.putShort((short) deflated);
 			out.position(out.position() + deflated);
 		} else {
 			final int deflated = deflater.deflate(deflaterOutput);
 			if (deflated < 1 || deflated > compressedLength) {
-				throw new AssertionError("Unexpected deflated size: " + deflated);
+				throw new Bug("Unexpected deflated size: " + deflated);
 			}
 			out.putShort((short) deflated);
 			out.put(deflaterOutput, 0, deflated);

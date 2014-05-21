@@ -23,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 
+import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -71,7 +72,7 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 			if (client.finishConnect()) {
 				key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
 				if (!(key.attachment() instanceof TCPChannel)) {
-					throw new AssertionError("Unsupported key attachment: " + key.attachment());
+					throw new Bug("Unsupported key attachment: " + key.attachment());
 				}
 				((TCPChannel<?>) key.attachment()).register();
 			}
