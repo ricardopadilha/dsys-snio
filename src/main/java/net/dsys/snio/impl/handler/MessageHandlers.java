@@ -109,21 +109,23 @@ public final class MessageHandlers {
 
 		@Optional(defaultValue = "MessageHandler-#", restrictions = "name != null")
 		@OptionGroup(name = "executor", seeAlso = "setExecutor(executor)")
-		public void setName(final String name) {
+		public HandlerBuilder setName(final String name) {
 			if (name == null) {
 				throw new NullPointerException("name == null");
 			}
 			this.name = name;
+			return this;
 		}
 
 		@Optional(defaultValue = "Executors.newCachedThreadPool(new DaemonThreadFactory(name))",
 				restrictions = "executor != null")
 		@OptionGroup(name = "executor", seeAlso = "setName(name)")
-		public void setExecutor(final ExecutorService executor) {
+		public HandlerBuilder setExecutor(final ExecutorService executor) {
 			if (executor == null) {
 				throw new NullPointerException("executor == null");
 			}
 			this.executor = executor;
+			return this;
 		}
 
 		@Mandatory(restrictions = "consumer != null")
