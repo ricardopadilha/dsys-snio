@@ -31,6 +31,11 @@ public final class SelectorPools {
 		return;
 	}
 
+	public static SelectorPool open(final String name) throws IOException {
+		final int size = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+		return open(name, size, new RoundRobinPolicy());
+	}
+
 	public static SelectorPool open(final String name, final int size) throws IOException {
 		return open(name, size, new RoundRobinPolicy());
 	}
