@@ -65,7 +65,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MessageBufferProducer<T> getAppOut(final KeyProcessor<T> processor) {
+	public MessageBufferProducer<T> getAppOutput(final KeyProcessor<T> processor) {
 		appOut.setProcessor(processor);
 		return appOut;
 	}
@@ -74,7 +74,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MessageBufferConsumer<T> getChannelIn() {
+	public MessageBufferConsumer<T> getChannelInput() {
 		return chnIn;
 	}
 
@@ -82,7 +82,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MessageBufferProducer<T> getChannelOut() {
+	public MessageBufferProducer<T> getChannelOutput() {
 		return chnOut;
 	}
 
@@ -90,7 +90,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	 * {@inheritDoc}
 	 */
 	@Override
-	public MessageBufferConsumer<T> getAppIn() {
+	public MessageBufferConsumer<T> getAppInput() {
 		return appIn;
 	}
 

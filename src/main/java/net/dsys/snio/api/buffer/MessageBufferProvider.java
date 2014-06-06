@@ -23,13 +23,13 @@ import net.dsys.snio.api.pool.KeyProcessor;
  */
 public interface MessageBufferProvider<T> {
 
-	MessageBufferProducer<T> getAppOut(KeyProcessor<T> processor);
+	MessageBufferProducer<T> getAppOutput(KeyProcessor<T> processor);
 
-	MessageBufferConsumer<T> getChannelIn();
+	MessageBufferConsumer<T> getChannelInput();
 
-	MessageBufferProducer<T> getChannelOut();
+	MessageBufferProducer<T> getChannelOutput();
 
-	MessageBufferConsumer<T> getAppIn();
+	MessageBufferConsumer<T> getAppInput();
 
 	void close();
 

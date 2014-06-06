@@ -74,10 +74,10 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 				.add(shutdownFuture).add(closeReadFuture).add(closeWriteFuture).build();
 
 		this.provider = provider;
-		this.appOut = provider.getAppOut(this);
-		this.chnIn = provider.getChannelIn();
-		this.chnOut = provider.getChannelOut();
-		this.appIn = provider.getAppIn();
+		this.appOut = provider.getAppOutput(this);
+		this.chnIn = provider.getChannelInput();
+		this.chnOut = provider.getChannelOutput();
+		this.appIn = provider.getAppInput();
 	}
 
 	/**

@@ -141,16 +141,16 @@ public final class ProviderTest {
 	@Test
 	public void testRingBuffer() throws InterruptedException, ExecutionException {
 		provider = RingBufferProvider.createFactory(1, factory).newInstance();
-		out = provider.getChannelOut();
-		in = provider.getAppIn();
+		out = provider.getChannelOutput();
+		in = provider.getAppInput();
 		test(out, in);
 	}
 
 	@Test
 	public void testBlockingQueue() throws InterruptedException, ExecutionException {
 		provider = BlockingQueueProvider.createFactory(1, factory).newInstance();
-		out = provider.getChannelOut();
-		in = provider.getAppIn();
+		out = provider.getChannelOutput();
+		in = provider.getAppInput();
 		test(out, in);
 	}
 
