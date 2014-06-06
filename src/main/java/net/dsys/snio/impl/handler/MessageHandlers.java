@@ -24,6 +24,7 @@ import static net.dsys.snio.impl.handler.HandlerType.SINGLE_THREADED;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.lang.Cleaner;
@@ -35,6 +36,7 @@ import net.dsys.commons.impl.builder.OptionGroup;
 import net.dsys.commons.impl.builder.Optional;
 import net.dsys.commons.impl.lang.ByteBufferCopier;
 import net.dsys.commons.impl.lang.ByteBufferFactory;
+import net.dsys.commons.impl.lang.DaemonThreadFactory;
 import net.dsys.commons.impl.lang.DirectByteBufferFactory;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -82,6 +84,9 @@ public final class MessageHandlers {
 	 */
 	public static final class HandlerBuilder {
 
+		private static AtomicInteger counter = new AtomicInteger();
+
+		private String name;
 		private HandlerType handlerType;
 		private ExecutionType threadType;
 		private ExecutorService executor;
@@ -92,6 +97,7 @@ public final class MessageHandlers {
 		private boolean useDirectBuffer;
 
 		HandlerBuilder() {
+			this.name = "MessageHandler-" + counter.getAndIncrement();
 			this.handlerType = null;
 			this.threadType = ZERO_COPY;
 			this.consumer = null;
@@ -101,7 +107,18 @@ public final class MessageHandlers {
 			this.useDirectBuffer = false;
 		}
 
-		@Optional(defaultValue = "Executors.newCachedThreadPool()", restrictions = "executor != null")
+		@Optional(defaultValue = "MessageHandler-#", restrictions = "name != null")
+		@OptionGroup(name = "executor", seeAlso = "setExecutor(executor)")
+		public void setName(final String name) {
+			if (name == null) {
+				throw new NullPointerException("name == null");
+			}
+			this.name = name;
+		}
+
+		@Optional(defaultValue = "Executors.newCachedThreadPool(new DaemonThreadFactory(name))",
+				restrictions = "executor != null")
+		@OptionGroup(name = "executor", seeAlso = "setName(name)")
 		public void setExecutor(final ExecutorService executor) {
 			if (executor == null) {
 				throw new NullPointerException("executor == null");
@@ -172,7 +189,7 @@ public final class MessageHandlers {
 		public MessageHandler<ByteBuffer> build() {
 			ExecutorService exec = executor;
 			if (exec == null) {
-				exec = Executors.newCachedThreadPool();
+				exec = Executors.newCachedThreadPool(new DaemonThreadFactory(name));
 			}
 			final ConsumerThreadFactory<ByteBuffer> threads;
 			switch (threadType) {
