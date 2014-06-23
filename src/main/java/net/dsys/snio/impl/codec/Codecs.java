@@ -62,6 +62,32 @@ public final class Codecs {
 	}
 
 	/**
+	 * Frame encoding with a simple int length header. Messages cannot be
+	 * longer than 2^31-5 bytes. This codec is thread-safe.
+	 * This codec should not be used with UDP message channels.
+	 * 
+	 * @return a codec configured for its maximum supported body length
+	 */
+	public static MessageCodec getLarge() {
+		return new IntHeaderCodec();
+	}
+
+	/**
+	 * Frame encoding with a simple int length header. Messages cannot be
+	 * longer than 2^31-5 bytes. This codec is thread-safe.
+	 * This codec should not be used with UDP message channels.
+	 * 
+	 * @param bodyLength
+	 *            maximum length of messages
+	 * @return a codec configured for the given body length
+	 * @throws IllegalArgumentException
+	 *             if the body length is too small or too large
+	 */
+	public static MessageCodec getLarge(final int bodyLength) {
+		return new IntHeaderCodec(bodyLength);
+	}
+
+	/**
 	 * Frame encoding with a CRC32 checksum at the end. Messages cannot be
 	 * longer than 65521 bytes to make sure that they will fit in an UDP
 	 * datagram. Thread-safety is guaranteed only between encoding and decoding,

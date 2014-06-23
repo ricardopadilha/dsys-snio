@@ -51,10 +51,19 @@ public final class CodecTest {
 
 	static void testCodec(final MessageCodec codec, final int length, final Random rnd) throws Exception {
 		final int len = 2 * length + codec.getFrameLength();
-		final ByteBuffer heap = ByteBuffer.allocate(len);
-		final ByteBuffer hin = ((ByteBuffer) heap.limit(length)).slice();
-		final ByteBuffer hout = ((ByteBuffer) heap.position(length).limit(2 * length)).slice();
-		final ByteBuffer htemp = ((ByteBuffer) heap.position(2 * length).limit(heap.capacity())).slice();
+		final ByteBuffer hin;
+		final ByteBuffer hout;
+		final ByteBuffer htemp;
+		if (len < 0 || len > 500_000) {
+			hin = ByteBuffer.allocate(length);
+			hout = ByteBuffer.allocate(length);
+			htemp = ByteBuffer.allocate(codec.getFrameLength());
+		} else {
+			final ByteBuffer heap = ByteBuffer.allocate(len);
+			hin = ((ByteBuffer) heap.limit(length)).slice();
+			hout = ((ByteBuffer) heap.position(length).limit(2 * length)).slice();
+			htemp = ((ByteBuffer) heap.position(2 * length).limit(heap.capacity())).slice();
+		}
 		while (hin.remaining() > 0) {
 			hin.put((byte) rnd.nextInt());
 		}
@@ -67,10 +76,19 @@ public final class CodecTest {
 		hout.flip();
 		assertEquals(hin, hout);
 
-		final ByteBuffer direct = ByteBuffer.allocateDirect(len);
-		final ByteBuffer din = ((ByteBuffer) direct.limit(length)).slice();
-		final ByteBuffer dout = ((ByteBuffer) direct.position(length).limit(2 * length)).slice();
-		final ByteBuffer dtemp = ((ByteBuffer) direct.position(2 * length).limit(direct.capacity())).slice();
+		final ByteBuffer din;
+		final ByteBuffer dout;
+		final ByteBuffer dtemp;
+		if (len < 0 || len > 500_000) {
+			din = ByteBuffer.allocateDirect(length);
+			dout = ByteBuffer.allocateDirect(length);
+			dtemp = ByteBuffer.allocateDirect(codec.getFrameLength());
+		} else {
+			final ByteBuffer direct = ByteBuffer.allocateDirect(len);
+			din = ((ByteBuffer) direct.limit(length)).slice();
+			dout = ((ByteBuffer) direct.position(length).limit(2 * length)).slice();
+			dtemp = ((ByteBuffer) direct.position(2 * length).limit(direct.capacity())).slice();
+		}
 		while (din.remaining() > 0) {
 			din.put((byte) rnd.nextInt());
 		}
@@ -140,6 +158,19 @@ public final class CodecTest {
 			@Override
 			public MessageCodec newInstance(final int length) {
 				return Codecs.getDefault(length);
+			}
+		});
+	}
+
+	@Test
+	@SuppressWarnings("static-method")
+	public void testLargeHeader() throws Exception {
+		final MessageCodec codec = Codecs.getLarge();
+		edgeTest(codec, 0, codec.getBodyLength() + 1);
+		testCodec(1_000_000, new CodecFactory() { // arbitrarily limit to 1MB
+			@Override
+			public MessageCodec newInstance(final int length) {
+				return Codecs.getLarge(length);
 			}
 		});
 	}

@@ -23,19 +23,19 @@ import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
- * Simple frame encoding which just adds an unsigned short length field as a
- * header. Messages cannot be longer than 65525 bytes to make sure that they
- * will fit in an UDP datagram. Thread-safe.
+ * Simple frame encoding which just adds an unsigned int length field as a
+ * header. Messages cannot be longer than 2^31-5 bytes. Thread-safe.
+ * This codec should not be used with UDP message channels.
  * 
  * @author Ricardo Padilha
  */
-final class ShortHeaderCodec implements MessageCodec {
+public final class IntHeaderCodec implements MessageCodec {
 
-	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
+	private static final int UNSIGNED_INT_MASK = Integer.MAX_VALUE;
 
-	private static final int HEADER_LENGTH = Short.SIZE / Byte.SIZE;
+	private static final int HEADER_LENGTH = Integer.SIZE / Byte.SIZE;
 	private static final int FOOTER_LENGTH = 0;
-	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH; // 65525
+	private static final int MAX_BODY_LENGTH = UNSIGNED_INT_MASK - HEADER_LENGTH;
 
 	private final int headerLength;
 	private final int bodyLength;
@@ -45,21 +45,18 @@ final class ShortHeaderCodec implements MessageCodec {
 	/**
 	 * Returns an instance for the maximum body length
 	 */
-	ShortHeaderCodec() {
+	IntHeaderCodec() {
 		this(MAX_BODY_LENGTH);
 	}
 
-	ShortHeaderCodec(final int bodyLength) {
+	IntHeaderCodec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
-			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 65527: " + bodyLength);
+			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0x7FFF_FFFB: " + bodyLength);
 		}
 		this.headerLength = HEADER_LENGTH;
 		this.bodyLength = bodyLength;
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + this.bodyLength + footerLength;
-		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
-			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
-		}
 	}
 
 	static int getMaxBodyLength() {
@@ -71,7 +68,7 @@ final class ShortHeaderCodec implements MessageCodec {
 	 */
 	@Override
 	public MessageCodec clone() {
-		return new ShortHeaderCodec(bodyLength);
+		return new IntHeaderCodec(bodyLength);
 	}
 
 	/**
@@ -131,7 +128,7 @@ final class ShortHeaderCodec implements MessageCodec {
 	@Override
 	public void put(final ByteBuffer in, final ByteBuffer out) {
 		final int length = in.remaining();
-		out.putShort((short) length);
+		out.putInt(length);
 		out.put(in);
 	}
 
@@ -144,7 +141,7 @@ final class ShortHeaderCodec implements MessageCodec {
 		if (rem < headerLength) {
 			return false;
 		}
-		final int length = in.getShort(in.position()) & UNSIGNED_SHORT_MASK;
+		final int length = in.getInt(in.position()) & UNSIGNED_INT_MASK;
 		if (length < 1 || length > bodyLength) {
 			throw new InvalidLengthException(length);
 		}
@@ -160,7 +157,7 @@ final class ShortHeaderCodec implements MessageCodec {
 	@Override
 	public void get(final ByteBuffer in, final ByteBuffer out) {
 		final int start = in.position();
-		final int length = in.getShort() & UNSIGNED_SHORT_MASK;
+		final int length = in.getInt() & UNSIGNED_INT_MASK;
 		final int end = start + headerLength + length;
 		final int lim = in.limit();
 		in.limit(end);
