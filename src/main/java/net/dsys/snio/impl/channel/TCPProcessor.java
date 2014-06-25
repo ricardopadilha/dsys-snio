@@ -44,18 +44,22 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	private ByteBuffer sendBuffer;
 	private long writeSequence;
 
-	TCPProcessor(final MessageCodec codec, final MessageBufferProvider<ByteBuffer> provider, final int sendSize,
-			final int receiveSize) {
+	TCPProcessor(final MessageCodec codec, final MessageBufferProvider<ByteBuffer> provider,
+			final int sendBufferSize, final int receiveBufferSize) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
 		}
+
+		final int sendSize = nearestPowerOfTwo(Math.max(sendBufferSize, codec.getFrameLength()));
+		final int receiveSize = nearestPowerOfTwo(Math.max(receiveBufferSize, codec.getFrameLength()));
 		if (sendSize < 1) {
 			throw new IllegalArgumentException("sendSize < 1");
 		}
 		if (receiveSize < 1) {
 			throw new IllegalArgumentException("receiveSize < 1");
 		}
+
 		this.codec = codec.clone();
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
@@ -86,7 +90,7 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void readRegistered(final SelectionKey key) {
-		this.receiveBuffer = ByteBuffer.allocateDirect(sendSize);
+		this.receiveBuffer = ByteBuffer.allocateDirect(receiveSize);
 	}
 
 	/**
@@ -94,7 +98,7 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void writeRegistered(final SelectionKey key) {
-		this.sendBuffer = ByteBuffer.allocateDirect(receiveSize);
+		this.sendBuffer = ByteBuffer.allocateDirect(sendSize);
 	}
 
 	/**
@@ -149,7 +153,12 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 					writeSequence = chnIn.acquire();
 				}
 				final ByteBuffer msg = chnIn.get(writeSequence);
-				if (codec.length(msg) > sendBuffer.remaining()) {
+				final int msglen = codec.length(msg);
+				if (msglen > sendBuffer.capacity()) {
+					// this message is too big for the current buffer
+					throw new IOException("codec.length(msg) > sendBuffer.capacity()");
+				}
+				if (msglen > sendBuffer.remaining()) {
 					break;
 				}
 				codec.put(msg, sendBuffer);
@@ -185,5 +194,22 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 		} catch (final Throwable t) {
 			future.fail(t);
 		}
+	}
+
+	/**
+	 * @return nearest larger or equal power of two
+	 */
+	private static int nearestPowerOfTwo(final int num) {
+	    int n = 0;
+	    if (num > 0) {
+			n = num - 1;
+		}
+	    n |= n >> 1;
+	    n |= n >> 2;
+	    n |= n >> 4;
+	    n |= n >> 8;
+	    n |= n >> 16;
+	    n++;
+	    return n;
 	}
 }

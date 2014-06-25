@@ -68,19 +68,23 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
 		}
-		if (sendBufferSize < 1) {
-			throw new IllegalArgumentException("sendBufferSize < 1");
-		}
-		if (receiveBufferSize < 1) {
-			throw new IllegalArgumentException("receiveBufferSize < 1");
-		}
 		if (engine == null) {
 			throw new NullPointerException("engine == null");
 		}
+
+		final int sendSize = nearestPowerOfTwo(Math.max(sendBufferSize, codec.getFrameLength()));
+		final int receiveSize = nearestPowerOfTwo(Math.max(receiveBufferSize, codec.getFrameLength()));
+		if (sendSize < 1) {
+			throw new IllegalArgumentException("sendSize < 1");
+		}
+		if (receiveSize < 1) {
+			throw new IllegalArgumentException("receiveSize < 1");
+		}
+
 		this.codec = codec.clone();
 		this.engine = engine;
-		this.sendSize = sendBufferSize;
-		this.receiveSize = receiveBufferSize;
+		this.sendSize = sendSize;
+		this.receiveSize = receiveSize;
 		this.writeSequence = NO_SEQUENCE;
 	}
 
@@ -265,7 +269,12 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 					writeSequence = chnIn.acquire();
 				}
 				final ByteBuffer msg = chnIn.get(writeSequence);
-				if (codec.length(msg) > preSendBuffer.remaining()) {
+				final int msglen = codec.length(msg);
+				if (msglen > preSendBuffer.capacity()) {
+					// this message is too big for the current buffer
+					throw new IOException("codec.length(msg) > preSendBuffer.capacity()");
+				}
+				if (msglen > preSendBuffer.remaining()) {
 					break;
 				}
 				codec.put(msg, preSendBuffer);
@@ -381,5 +390,22 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 		} else {
 			wakeupWriter();
 		}
+	}
+
+	/**
+	 * @return nearest larger or equal power of two
+	 */
+	private static int nearestPowerOfTwo(final int num) {
+	    int n = 0;
+	    if (num > 0) {
+			n = num - 1;
+		}
+	    n |= n >> 1;
+	    n |= n >> 2;
+	    n |= n >> 4;
+	    n |= n >> 8;
+	    n |= n >> 16;
+	    n++;
+	    return n;
 	}
 }
