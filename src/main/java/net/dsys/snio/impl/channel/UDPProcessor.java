@@ -27,6 +27,7 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
+import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
@@ -34,21 +35,29 @@ import net.dsys.snio.api.codec.MessageCodec;
  */
 final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 
-	private static final int MAX_FRAME_LENGTH = 0xFFFF;
+	private static final int MAX_DATAGRAM_LENGTH = 0xFFFF;
+	private static final int DATAGRAM_HEADER_LENGTH = 8;
+	private static final int MAX_DATAGRAM_PAYLOAD = MAX_DATAGRAM_LENGTH - DATAGRAM_HEADER_LENGTH;
 
 	private final MessageCodec codec;
+	private final RateLimiter limiter;
 	private ByteBuffer receiveBuffer;
 	private ByteBuffer sendBuffer;
 
-	UDPProcessor(final MessageCodec codec, final MessageBufferProvider<ByteBuffer> provider) {
+	UDPProcessor(final MessageCodec codec, final RateLimiter limiter,
+			final MessageBufferProvider<ByteBuffer> provider) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
 		}
-		if (codec.getFrameLength() > MAX_FRAME_LENGTH) {
+		if (limiter == null) {
+			throw new NullPointerException("limiter == null");
+		}
+		if (codec.getFrameLength() > MAX_DATAGRAM_PAYLOAD) {
 			throw new IllegalArgumentException("codec.getFrameLength() > MAX_FRAME_LENGTH");
 		}
-		this.codec = codec.clone();
+		this.codec = codec;
+		this.limiter = limiter;
 	}
 
 	/**
@@ -64,7 +73,7 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void readRegistered(final SelectionKey key) {
-		this.receiveBuffer = ByteBuffer.allocateDirect(MAX_FRAME_LENGTH);
+		this.receiveBuffer = ByteBuffer.allocateDirect(MAX_DATAGRAM_LENGTH);
 	}
 
 	/**
@@ -72,7 +81,7 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void writeRegistered(final SelectionKey key) {
-		this.sendBuffer = ByteBuffer.allocateDirect(MAX_FRAME_LENGTH);
+		this.sendBuffer = ByteBuffer.allocateDirect(MAX_DATAGRAM_LENGTH);
 		// start the sendBuffer as empty to ensure the writerKey is disabled
 		sendBuffer.flip();
 	}
@@ -90,6 +99,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 			return 0;
 		}
 		final int n = receiveBuffer.position() - start;
+
+		limiter.receive(n);
+
 		receiveBuffer.flip();
 		while (codec.hasNext(receiveBuffer)) {
 			try {
@@ -141,6 +153,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 			} catch (final InterruptedException e) {
 				throw new IOException(e);
 			}
+
+			limiter.send(sendBuffer.remaining());
+
 			do {
 				n += channel.send(sendBuffer, address);
 			} while (sendBuffer.remaining() > 0);

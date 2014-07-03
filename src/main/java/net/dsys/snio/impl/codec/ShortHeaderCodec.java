@@ -24,8 +24,7 @@ import net.dsys.snio.api.codec.MessageCodec;
 
 /**
  * Simple frame encoding which just adds an unsigned short length field as a
- * header. Messages cannot be longer than 65525 bytes to make sure that they
- * will fit in an UDP datagram. Thread-safe.
+ * header. Messages cannot be longer than 65533 bytes. Thread-safe.
  * 
  * @author Ricardo Padilha
  */
@@ -35,7 +34,7 @@ final class ShortHeaderCodec implements MessageCodec {
 
 	private static final int HEADER_LENGTH = Short.SIZE / Byte.SIZE;
 	private static final int FOOTER_LENGTH = 0;
-	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH; // 65525
+	private static final int MAX_BODY_LENGTH = UNSIGNED_SHORT_MASK - HEADER_LENGTH;
 
 	private final int headerLength;
 	private final int bodyLength;
@@ -51,27 +50,12 @@ final class ShortHeaderCodec implements MessageCodec {
 
 	ShortHeaderCodec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
-			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 65527: " + bodyLength);
+			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 65533: " + bodyLength);
 		}
 		this.headerLength = HEADER_LENGTH;
 		this.bodyLength = bodyLength;
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + this.bodyLength + footerLength;
-		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
-			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
-		}
-	}
-
-	static int getMaxBodyLength() {
-		return MAX_BODY_LENGTH;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageCodec clone() {
-		return new ShortHeaderCodec(bodyLength);
 	}
 
 	/**
@@ -110,7 +94,7 @@ final class ShortHeaderCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int length(final ByteBuffer in) {
+	public int getEncodedLength(final ByteBuffer in) {
 		return headerLength + in.remaining();
 	}
 
@@ -144,11 +128,19 @@ final class ShortHeaderCodec implements MessageCodec {
 		if (rem < headerLength) {
 			return false;
 		}
-		final int length = in.getShort(in.position()) & UNSIGNED_SHORT_MASK;
+		final int length = getDecodedLength(in);
 		if (length < 1 || length > bodyLength) {
 			throw new InvalidLengthException(length);
 		}
 		return (rem >= headerLength + length);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getDecodedLength(final ByteBuffer in) {
+		return in.getShort(in.position()) & UNSIGNED_SHORT_MASK;
 	}
 
 	/**

@@ -59,7 +59,7 @@ public final class SSLEchoServer {
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newSSLServerChannel()
 				.setContext(getContext())
 				.setPool(pool)
-				.setMessageCodec(Codecs.getLZ4Compression(length))
+				.setMessageCodec(Codecs.getLZ4Factory(length))
 				.useRingBuffer()
 				.open();
 

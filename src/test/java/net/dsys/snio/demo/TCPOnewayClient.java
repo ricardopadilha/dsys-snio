@@ -25,8 +25,10 @@ import java.util.concurrent.Executors;
 
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
+import net.dsys.snio.api.io.BinaryUnit;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
+import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -50,7 +52,9 @@ public final class TCPOnewayClient {
 		final SelectorPool pool = SelectorPools.open("client", threads);
 		final MessageChannel<ByteBuffer> client = MessageChannels.newTCPChannel()
 				.setPool(pool)
-				.setMessageLength(length)
+				//.setMessageLength(length)
+				.setMessageCodec(Codecs.getDefault(length))
+				.setRateLimit(100, BinaryUnit.GIGABITS)
 				.useRingBuffer()
 				.open();
 

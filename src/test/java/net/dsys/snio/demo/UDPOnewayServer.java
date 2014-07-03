@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
-import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
@@ -32,24 +31,26 @@ import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
- * Echo server using UDP.
+ * Oneway echo server using UDP.
  * 
  * @author Ricardo Padilha
  */
-public final class UDPEchoServer {
+public final class UDPOnewayServer {
 
-	private UDPEchoServer() {
+	private UDPOnewayServer() {
 		return;
 	}
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int length = Integer.parseInt(getArg("length", "65262", args));
+		final int buffers = Integer.parseInt(getArg("buffers", "256", args));
+		final int length = Integer.parseInt(getArg("length", "1024", args));
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 		final MessageChannel<ByteBuffer> server = MessageChannels.newUDPChannel()
 				.setPool(pool)
+				.setBufferCapacity(buffers)
 				.setMessageLength(length)
 				.useRingBuffer()
 				.open();
@@ -58,11 +59,10 @@ public final class UDPEchoServer {
 		server.getBindFuture().get();
 
 		final MessageBufferConsumer<ByteBuffer> in = server.getInputBuffer();
-		final MessageBufferProducer<ByteBuffer> out = server.getOutputBuffer();
 
 		// one thread per client
 		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
-		executor.execute(MessageHandlers.syncConsumer(in, new EchoServer(out)));
+		executor.execute(MessageHandlers.syncConsumer(in, new EchoConsumer()));
 
 		pool.getCloseFuture().get();
 		executor.shutdown();

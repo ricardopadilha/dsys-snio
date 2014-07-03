@@ -28,6 +28,7 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
+import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
@@ -38,17 +39,22 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	private static final int NO_SEQUENCE = -1;
 
 	private final MessageCodec codec;
+	private final RateLimiter limiter;
 	private final int sendSize;
 	private final int receiveSize;
 	private ByteBuffer receiveBuffer;
 	private ByteBuffer sendBuffer;
 	private long writeSequence;
 
-	TCPProcessor(final MessageCodec codec, final MessageBufferProvider<ByteBuffer> provider,
+	TCPProcessor(final MessageCodec codec, final RateLimiter limiter,
+			final MessageBufferProvider<ByteBuffer> provider,
 			final int sendBufferSize, final int receiveBufferSize) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
+		}
+		if (limiter == null) {
+			throw new NullPointerException("limiter == null");
 		}
 
 		final int sendSize = nearestPowerOfTwo(Math.max(sendBufferSize, codec.getFrameLength()));
@@ -60,7 +66,8 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 			throw new IllegalArgumentException("receiveSize < 1");
 		}
 
-		this.codec = codec.clone();
+		this.codec = codec;
+		this.limiter = limiter;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
 		this.writeSequence = NO_SEQUENCE;
@@ -114,6 +121,9 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 			// (n < 0) means channel closed from the other side
 			return n;
 		}
+
+		limiter.receive(n);
+
 		receiveBuffer.flip();
 		while (codec.hasNext(receiveBuffer)) {
 			try {
@@ -153,7 +163,7 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 					writeSequence = chnIn.acquire();
 				}
 				final ByteBuffer msg = chnIn.get(writeSequence);
-				final int msglen = codec.length(msg);
+				final int msglen = codec.getEncodedLength(msg);
 				if (msglen > sendBuffer.capacity()) {
 					// this message is too big for the current buffer
 					throw new IOException("codec.length(msg) > sendBuffer.capacity()");
@@ -170,6 +180,9 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 			throw new IOException(e);
 		}
 		sendBuffer.flip();
+
+		limiter.send(sendBuffer.remaining());
+
 		final int n = channel.write(sendBuffer);
 		if (sendBuffer.remaining() > 0) {
 			sendBuffer.compact();

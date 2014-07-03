@@ -59,18 +59,6 @@ public final class IntHeaderCodec implements MessageCodec {
 		this.frameLength = headerLength + this.bodyLength + footerLength;
 	}
 
-	static int getMaxBodyLength() {
-		return MAX_BODY_LENGTH;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageCodec clone() {
-		return new IntHeaderCodec(bodyLength);
-	}
-
 	/**
 	 * {@inheritDoc}
 	 */
@@ -107,7 +95,7 @@ public final class IntHeaderCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int length(final ByteBuffer in) {
+	public int getEncodedLength(final ByteBuffer in) {
 		return headerLength + in.remaining();
 	}
 
@@ -141,11 +129,19 @@ public final class IntHeaderCodec implements MessageCodec {
 		if (rem < headerLength) {
 			return false;
 		}
-		final int length = in.getInt(in.position()) & UNSIGNED_INT_MASK;
+		final int length = getDecodedLength(in);
 		if (length < 1 || length > bodyLength) {
 			throw new InvalidLengthException(length);
 		}
 		return (rem >= headerLength + length);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getDecodedLength(final ByteBuffer in) {
+		return in.getInt(in.position()) & UNSIGNED_INT_MASK;
 	}
 
 	/**

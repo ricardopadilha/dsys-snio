@@ -23,7 +23,7 @@ import net.jpountz.xxhash.XXHashFactory;
 
 /**
  * Simple wrapper for xxHash. Only implements {@link #update(byte[], int, int)},
- * and can only be updated once.
+ * and can only be updated once before a reset.
  * 
  * @author Ricardo Padilha
  */
@@ -77,5 +77,4 @@ final class XXHashChecksum implements Checksum {
 		done = false;
 		value = 0;
 	}
-
 }

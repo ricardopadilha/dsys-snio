@@ -19,9 +19,8 @@ package net.dsys.snio.impl.codec;
 import java.nio.ByteBuffer;
 import java.util.zip.Checksum;
 
-import net.dsys.commons.impl.lang.FastArrays;
 import net.dsys.snio.api.codec.InvalidEncodingException;
-import net.dsys.snio.api.codec.InvalidLengthException;
+import net.dsys.snio.api.codec.InvalidMessageException;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
@@ -35,67 +34,40 @@ import net.dsys.snio.api.codec.MessageCodec;
  */
 final class ChecksumCodec implements MessageCodec {
 
-	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
+	private static final int INT_LENGTH = Integer.SIZE / Byte.SIZE;
 
-	private static final int HEADER_LENGTH = Short.SIZE / Byte.SIZE;
-	private static final int FOOTER_LENGTH = Integer.SIZE / Byte.SIZE;
-	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH - FOOTER_LENGTH; // 65521
-
+	private final MessageCodec delegate;
 	private final int headerLength;
 	private final int bodyLength;
 	private final int footerLength;
 	private final int frameLength;
-	private final int tailLength;
+
 	private final Checksum encoder;
 	private final Checksum decoder;
 	private final byte[] encoderArray;
 	private final byte[] decoderArray;
 
-	/**
-	 * Returns an instance for the maximum body length
-	 */
-	ChecksumCodec(final Checksum encoder, final Checksum decoder) {
-		this(encoder, decoder, MAX_BODY_LENGTH);
-	}
-
-	ChecksumCodec(final Checksum encoder, final Checksum decoder, final int bodyLength) {
+	ChecksumCodec(final MessageCodec codec, final Checksum encoder, final Checksum decoder) {
+		if (codec == null) {
+			throw new NullPointerException("codec == null");
+		}
 		if (encoder == null) {
 			throw new NullPointerException("encoder == null");
 		}
 		if (decoder == null) {
 			throw new NullPointerException("decoder == null");
 		}
-		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
-			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 65521: " + bodyLength);
-		}
-		this.bodyLength = bodyLength;
-		this.headerLength = HEADER_LENGTH;
-		this.footerLength = FOOTER_LENGTH;
-		this.frameLength = headerLength + this.bodyLength + footerLength;
-		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
-			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
-		}
-		this.tailLength = this.bodyLength + footerLength;
+
+		this.delegate = codec;
+		this.headerLength = codec.getHeaderLength();
+		this.bodyLength = codec.getBodyLength();
+		this.footerLength = codec.getFooterLength() + INT_LENGTH;
+		this.frameLength = codec.getFrameLength() + INT_LENGTH;
+
 		this.encoder = encoder;
 		this.decoder = decoder;
-		this.encoderArray = new byte[frameLength];
-		this.decoderArray = new byte[frameLength];
-	}
-
-	static int getMaxBodyLength() {
-		return MAX_BODY_LENGTH;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageCodec clone() {
-		try {
-			return new ChecksumCodec(encoder.getClass().newInstance(), decoder.getClass().newInstance(), bodyLength);
-		} catch (final InstantiationException | IllegalAccessException e) {
-			throw new UnsupportedOperationException(e);
-		}
+		this.encoderArray = new byte[codec.getFrameLength()];
+		this.decoderArray = new byte[codec.getFrameLength()];
 	}
 
 	/**
@@ -134,14 +106,12 @@ final class ChecksumCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int length(final ByteBuffer in) {
-		return headerLength + in.remaining();
+	public int getEncodedLength(final ByteBuffer in) {
+		return delegate.getEncodedLength(in) + INT_LENGTH;
 	}
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * @throws InvalidLengthException
 	 */
 	@Override
 	public boolean isValid(final ByteBuffer out) {
@@ -151,25 +121,28 @@ final class ChecksumCodec implements MessageCodec {
 
 	/**
 	 * {@inheritDoc}
+	 * @throws InvalidMessageException 
 	 */
 	@Override
-	public void put(final ByteBuffer in, final ByteBuffer out) {
-		final int rem = in.remaining();
-		final int len = rem + headerLength;
-		final int length = rem + footerLength;
+	public void put(final ByteBuffer in, final ByteBuffer out) throws InvalidMessageException {
+		final int start = out.position();
+		delegate.put(in, out);
+		final int end = out.position();
+		final int len = end - start;
+
 		final int off;
 		final byte[] array;
 		if (out.hasArray()) {
 			array = out.array();
-			off = out.arrayOffset() + out.position();
-			out.putShort((short) length);
-			out.put(in);
+			off = out.arrayOffset() + start;
 		} else {
 			array = encoderArray;
 			off = 0;
-			FastArrays.putShort(encoderArray, 0, (short) length);
-			in.get(array, headerLength, rem);
-			out.put(array, 0, len);
+			// copy to a local array
+			final int lim = out.limit();
+			out.position(start).limit(end);
+			out.get(array, off, len);
+			out.limit(lim).position(end);
 		}
 		encoder.reset();
 		encoder.update(array, off, len);
@@ -182,16 +155,20 @@ final class ChecksumCodec implements MessageCodec {
 	 */
 	@Override
 	public boolean hasNext(final ByteBuffer in) throws InvalidEncodingException {
-		final int rem = in.remaining();
-		if (rem < headerLength) {
-			return false;
+		boolean hasNext = delegate.hasNext(in);
+		if (hasNext) {
+			final int rem = in.remaining();
+			hasNext = (rem >= getDecodedLength(in));
 		}
-		final int length = in.getShort(in.position()) & UNSIGNED_SHORT_MASK; // unsigned
-																				// short
-		if (length < 1 || length > tailLength) {
-			throw new InvalidLengthException(length);
-		}
-		return (rem >= headerLength + length);
+		return hasNext;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getDecodedLength(final ByteBuffer in) {
+		return delegate.getDecodedLength(in) + INT_LENGTH;
 	}
 
 	/**
@@ -203,31 +180,29 @@ final class ChecksumCodec implements MessageCodec {
 	@Override
 	public void get(final ByteBuffer in, final ByteBuffer out) throws InvalidEncodingException {
 		final int start = in.position();
-		final int length = (in.getShort() & UNSIGNED_SHORT_MASK) - footerLength;
-		final int end = start + headerLength + length;
-		final int len = length + headerLength;
+		delegate.get(in, out);
+		final int end = in.position();
+		final int len = end - start;
+
 		final int off;
 		final byte[] array;
 		if (in.hasArray()) {
 			array = in.array();
 			off = in.arrayOffset() + start;
-			final int lim = in.limit();
-			in.limit(end);
-			out.put(in);
-			in.limit(lim);
 		} else {
 			array = decoderArray;
 			off = 0;
-			in.position(start);
+			final int lim = in.limit();
+			in.position(start).limit(end);
 			in.get(array, off, len);
-			out.put(array, headerLength, length);
+			in.limit(lim).position(end);
 		}
 		decoder.reset();
 		decoder.update(array, off, len);
 		final int calculated = (int) decoder.getValue();
 		final int received = in.getInt();
 		if (calculated != received) {
-			throw new InvalidEncodingException("mismatching xxHash");
+			throw new InvalidEncodingException("mismatching checksum");
 		}
 	}
 
@@ -236,7 +211,7 @@ final class ChecksumCodec implements MessageCodec {
 	 */
 	@Override
 	public void close() {
-		return;
+		delegate.close();
 	}
 
 	/**
@@ -244,7 +219,7 @@ final class ChecksumCodec implements MessageCodec {
 	 */
 	@Override
 	public String toString() {
-		return "ChecksumCodec[" + encoder + ":" + decoder + "](" + headerLength + ":" + bodyLength + ")";
+		return "ChecksumCodec[" + encoder + ":" + decoder + "](" + delegate + ")";
 	}
 
 }

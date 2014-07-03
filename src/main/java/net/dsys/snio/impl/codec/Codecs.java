@@ -19,16 +19,13 @@ package net.dsys.snio.impl.codec;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 
+import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
  * @author Ricardo Padilha
  */
 public final class Codecs {
-
-	private static final int MAX_DATAGRAM_LENGTH = 0xFFFF;
-	private static final int DATAGRAM_HEADER_LENGTH = 8;
-	static final int MAX_DATAGRAM_PAYLOAD = MAX_DATAGRAM_LENGTH - DATAGRAM_HEADER_LENGTH;
 
 	private Codecs() {
 		// no instantiation allowed
@@ -42,8 +39,17 @@ public final class Codecs {
 	 * 
 	 * @return a codec configured for its maximum supported body length
 	 */
-	public static MessageCodec getDefault() {
+	public static MessageCodec getShort() {
 		return new ShortHeaderCodec();
+	}
+
+	public static Factory<MessageCodec> getShortFactory() {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getShort();
+			}
+		};
 	}
 
 	/**
@@ -57,25 +63,23 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getDefault(final int bodyLength) {
+	public static MessageCodec getShort(final int bodyLength) {
 		return new ShortHeaderCodec(bodyLength);
 	}
 
-	/**
-	 * Frame encoding with a simple int length header. Messages cannot be
-	 * longer than 2^31-5 bytes. This codec is thread-safe.
-	 * This codec should not be used with UDP message channels.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getLarge() {
-		return new IntHeaderCodec();
+	public static Factory<MessageCodec> getShortFactory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getShort(bodyLength);
+			}
+		};
 	}
 
 	/**
-	 * Frame encoding with a simple int length header. Messages cannot be
-	 * longer than 2^31-5 bytes. This codec is thread-safe.
-	 * This codec should not be used with UDP message channels.
+	 * Frame encoding with a simple int length header. Messages cannot be longer
+	 * than 2^31-5 bytes. This codec is thread-safe. Messages cannot be longer
+	 * than 65531 bytes if they need to fit in an UDP datagram.
 	 * 
 	 * @param bodyLength
 	 *            maximum length of messages
@@ -83,29 +87,25 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getLarge(final int bodyLength) {
+	public static MessageCodec getDefault(final int bodyLength) {
 		return new IntHeaderCodec(bodyLength);
 	}
 
-	/**
-	 * Frame encoding with a CRC32 checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getCRC32Checksum() {
-		return new ChecksumCodec(new CRC32(), new CRC32());
+	public static Factory<MessageCodec> getDefaultFactory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getDefault(bodyLength);
+			}
+		};
 	}
 
 	/**
 	 * Frame encoding with a CRC32 checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
+	 * longer than 65521 bytes if they need to fit in an UDP datagram.
+	 * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+	 * different threads can encode and decode at the same time, but two threads
+	 * cannot encode at the same time.
 	 * 
 	 * @param bodyLength
 	 *            maximum length of messages
@@ -114,28 +114,24 @@ public final class Codecs {
 	 *             if the body length is too small or too large
 	 */
 	public static MessageCodec getCRC32Checksum(final int bodyLength) {
-		return new ChecksumCodec(new CRC32(), new CRC32(), bodyLength);
+		return new ChecksumCodec(getDefault(bodyLength), new CRC32(), new CRC32());
+	}
+
+	public static Factory<MessageCodec> getCRC32Factory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getCRC32Checksum(bodyLength);
+			}
+		};
 	}
 
 	/**
 	 * Frame encoding with an Adler32 checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getAdler32Checksum() {
-		return new ChecksumCodec(new Adler32(), new Adler32());
-	}
-
-	/**
-	 * Frame encoding with an Adler32 checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
+	 * longer than 65521 bytes if they need to fit in an UDP datagram.
+	 * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+	 * different threads can encode and decode at the same time, but two threads
+	 * cannot encode at the same time.
 	 * 
 	 * @param bodyLength
 	 *            maximum length of messages
@@ -144,28 +140,24 @@ public final class Codecs {
 	 *             if the body length is too small or too large
 	 */
 	public static MessageCodec getAdler32Checksum(final int bodyLength) {
-		return new ChecksumCodec(new Adler32(), new Adler32(), bodyLength);
+		return new ChecksumCodec(getDefault(bodyLength), new Adler32(), new Adler32());
+	}
+
+	public static Factory<MessageCodec> getAdler32Factory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getAdler32Checksum(bodyLength);
+			}
+		};
 	}
 
 	/**
 	 * Frame encoding with an xxHash checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getXXHashChecksum() {
-		return new ChecksumCodec(new XXHashChecksum(), new XXHashChecksum());
-	}
-
-	/**
-	 * Frame encoding with an xxHash checksum at the end. Messages cannot be
-	 * longer than 65521 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
+	 * longer than 65521 bytes if they need to fit in an UDP datagram.
+	 * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+	 * different threads can encode and decode at the same time, but two threads
+	 * cannot encode at the same time.
 	 * 
 	 * @param bodyLength
 	 *            maximum length of messages
@@ -174,28 +166,24 @@ public final class Codecs {
 	 *             if the body length is too small or too large
 	 */
 	public static MessageCodec getXXHashChecksum(final int bodyLength) {
-		return new ChecksumCodec(new XXHashChecksum(), new XXHashChecksum(), bodyLength);
+		return new ChecksumCodec(getDefault(bodyLength), new XXHashChecksum(), new XXHashChecksum());
+	}
+
+	public static Factory<MessageCodec> getXXHashFactory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getXXHashChecksum(bodyLength);
+			}
+		};
 	}
 
 	/**
 	 * Frame encoding that compresses messages using deflate. Messages cannot be
-	 * longer than 65499 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getDeflateCompression() {
-		return new DeflateCodec();
-	}
-
-	/**
-	 * Frame encoding that compresses messages using deflate. Messages cannot be
-	 * longer than 65499 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
+	 * longer than 65499 bytes if they need to fit in an UDP datagram.
+	 * Thread-safety is guaranteed only between encoding and decoding, i.e., two
+	 * different threads can encode and decode at the same time, but two threads
+	 * cannot encode at the same time.
 	 * 
 	 * @param bodyLength
 	 *            maximum length of messages
@@ -207,17 +195,13 @@ public final class Codecs {
 		return new DeflateCodec(bodyLength);
 	}
 
-	/**
-	 * Frame encoding that compresses messages using LZ4. Messages cannot be
-	 * longer than 65252 bytes to make sure that they will fit in an UDP
-	 * datagram. Thread-safety is guaranteed only between encoding and decoding,
-	 * i.e., two different threads can encode and decode at the same time, but
-	 * two threads cannot encode at the same time.
-	 * 
-	 * @return a codec configured for its maximum supported body length
-	 */
-	public static MessageCodec getLZ4Compression() {
-		return new LZ4CompressionCodec();
+	public static Factory<MessageCodec> getDeflateFactory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getDeflateCompression(bodyLength);
+			}
+		};
 	}
 
 	/**
@@ -237,4 +221,12 @@ public final class Codecs {
 		return new LZ4CompressionCodec(bodyLength);
 	}
 
+	public static Factory<MessageCodec> getLZ4Factory(final int bodyLength) {
+		return new Factory<MessageCodec>() {
+			@Override
+			public MessageCodec newInstance() {
+				return getLZ4Compression(bodyLength);
+			}
+		};
+	}
 }

@@ -31,6 +31,7 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
+import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.api.pool.KeyAcceptor;
 import net.dsys.snio.api.pool.SelectorExecutor;
@@ -43,8 +44,9 @@ import net.dsys.snio.api.pool.SelectorThread;
 final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 
 	private final SelectorPool pool;
-	private final MessageCodec codec;
-	private final Factory<MessageBufferProvider<ByteBuffer>> factory;
+	private final Factory<MessageCodec> codecs;
+	private final Factory<RateLimiter> limiters;
+	private final Factory<MessageBufferProvider<ByteBuffer>> providers;
 	private final int sendSize;
 	private final int receiveSize;
 	private final SettableCallbackFuture<Void> bindFuture;
@@ -54,17 +56,20 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 	private CloseListener<ByteBuffer> close;
 	private SelectionKey acceptKey;
 
-	TCPAcceptor(final SelectorPool pool, final MessageCodec codec,
-			final Factory<MessageBufferProvider<ByteBuffer>> factory, final int sendSize,
+	TCPAcceptor(final SelectorPool pool, final Factory<MessageCodec> codecs, final Factory<RateLimiter> limiters,
+			final Factory<MessageBufferProvider<ByteBuffer>> providers, final int sendSize,
 			final int receiveSize) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}
-		if (codec == null) {
-			throw new IllegalArgumentException("codec == null");
+		if (codecs == null) {
+			throw new IllegalArgumentException("codecs == null");
 		}
-		if (factory == null) {
-			throw new IllegalArgumentException("factory == null");
+		if (limiters == null) {
+			throw new IllegalArgumentException("limiters == null");
+		}
+		if (providers == null) {
+			throw new IllegalArgumentException("providers == null");
 		}
 		if (sendSize < 1) {
 			throw new IllegalArgumentException("sendSize < 1");
@@ -73,8 +78,9 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 			throw new IllegalArgumentException("receiveSize < 1");
 		}
 		this.pool = pool;
-		this.codec = codec;
-		this.factory = factory;
+		this.codecs = codecs;
+		this.limiters = limiters;
+		this.providers = providers;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
 		this.bindFuture = new SettableCallbackFuture<>();
@@ -123,8 +129,10 @@ final class TCPAcceptor implements KeyAcceptor<ByteBuffer> {
 		final SocketChannel client = server.accept();
 		client.configureBlocking(false);
 
-		final MessageBufferProvider<ByteBuffer> provider = factory.newInstance();
-		final TCPProcessor processor = new TCPProcessor(codec, provider, sendSize, receiveSize);
+		final MessageCodec codec = codecs.newInstance();
+		final RateLimiter limiter = limiters.newInstance();
+		final MessageBufferProvider<ByteBuffer> provider = providers.newInstance();
+		final TCPProcessor processor = new TCPProcessor(codec, limiter, provider, sendSize, receiveSize);
 		final TCPChannel<ByteBuffer> channel = new TCPChannel<>(pool.next(), processor, client, close);
 		channel.open();
 		channel.register();

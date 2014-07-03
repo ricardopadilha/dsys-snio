@@ -151,10 +151,23 @@ public final class CodecTest {
 
 	@Test
 	@SuppressWarnings("static-method")
-	public void testLengthHeader() throws Exception {
-		final MessageCodec codec = Codecs.getDefault();
+	public void testShortLengthHeader() throws Exception {
+		final MessageCodec codec = Codecs.getShort();
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
+			@Override
+			public MessageCodec newInstance(final int length) {
+				return Codecs.getShort(length);
+			}
+		});
+	}
+
+	@Test
+	@SuppressWarnings("static-method")
+	public void testLengthHeader() throws Exception {
+		final MessageCodec codec = Codecs.getDefault(65531);
+		edgeTest(codec, 0, codec.getBodyLength() + 1);
+		testCodec(1_000_000, new CodecFactory() { // arbitrarily limit to 1MB
 			@Override
 			public MessageCodec newInstance(final int length) {
 				return Codecs.getDefault(length);
@@ -164,21 +177,8 @@ public final class CodecTest {
 
 	@Test
 	@SuppressWarnings("static-method")
-	public void testLargeHeader() throws Exception {
-		final MessageCodec codec = Codecs.getLarge();
-		edgeTest(codec, 0, codec.getBodyLength() + 1);
-		testCodec(1_000_000, new CodecFactory() { // arbitrarily limit to 1MB
-			@Override
-			public MessageCodec newInstance(final int length) {
-				return Codecs.getLarge(length);
-			}
-		});
-	}
-
-	@Test
-	@SuppressWarnings("static-method")
 	public void testAdler32() throws Exception {
-		final MessageCodec codec = Codecs.getAdler32Checksum();
+		final MessageCodec codec = Codecs.getAdler32Checksum(65521);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
@@ -191,7 +191,7 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testCRC32() throws Exception {
-		final MessageCodec codec = Codecs.getCRC32Checksum();
+		final MessageCodec codec = Codecs.getCRC32Checksum(65521);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
@@ -204,7 +204,7 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testXXHash() throws Exception {
-		final MessageCodec codec = Codecs.getXXHashChecksum();
+		final MessageCodec codec = Codecs.getXXHashChecksum(65521);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
@@ -217,7 +217,7 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testDeflate() throws Exception {
-		final MessageCodec codec = Codecs.getDeflateCompression();
+		final MessageCodec codec = Codecs.getDeflateCompression(65499);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override
@@ -230,7 +230,7 @@ public final class CodecTest {
 	@Test
 	@SuppressWarnings("static-method")
 	public void testLZ4() throws Exception {
-		final MessageCodec codec = Codecs.getLZ4Compression();
+		final MessageCodec codec = Codecs.getLZ4Compression(65252);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
 		testCodec(codec.getBodyLength(), new CodecFactory() {
 			@Override

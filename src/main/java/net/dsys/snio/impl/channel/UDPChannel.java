@@ -78,6 +78,7 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 		if (channel == null) {
 			channel = DatagramChannel.open();
 			channel.configureBlocking(false);
+			selector.register(channel, this);
 		}
 	}
 
@@ -106,7 +107,6 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 		} else {
 			channel.bind(local);
 		}
-		selector.register(channel, this);
 		return this;
 	}
 
@@ -153,7 +153,6 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 		} else {
 			channel.connect(remote);
 		}
-		selector.register(channel, this);
 	}
 
 	/**
@@ -162,11 +161,6 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 	@Override
 	public CallbackFuture<Void> getConnectFuture() {
 		return processor.getConnectionFuture();
-	}
-
-	void register() {
-		assert isOpen();
-		selector.register(channel, this);
 	}
 
 	/**

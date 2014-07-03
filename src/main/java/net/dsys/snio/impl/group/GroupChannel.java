@@ -31,7 +31,6 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.CloseListener;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.group.GroupSocketAddress;
-import net.dsys.snio.impl.channel.AbstractBuilder;
 
 /**
  * @author Ricardo Padilha
@@ -39,7 +38,7 @@ import net.dsys.snio.impl.channel.AbstractBuilder;
 final class GroupChannel<T> implements MessageChannel<T> {
 
 	private final MessageBufferConsumer<T> in;
-	private final AbstractBuilder<MessageChannel<T>, T> builder;
+	private final ChannelFactory<T> factory;
 	private final Copier<T> copier;
 
 	private MessageChannel<T>[] channels;
@@ -49,19 +48,19 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	private CallbackFuture<Void> connectFuture;
 	private CallbackFuture<Void> closeFuture;
 
-	GroupChannel(final MessageBufferConsumer<T> in, final AbstractBuilder<MessageChannel<T>, T> builder,
+	GroupChannel(final MessageBufferConsumer<T> in, final ChannelFactory<T> factory,
 			final Copier<T> copier) {
 		if (in == null) {
 			throw new NullPointerException("in == null");
 		}
-		if (builder == null) {
-			throw new NullPointerException("builder == null");
+		if (factory == null) {
+			throw new NullPointerException("factory == null");
 		}
 		if (copier == null) {
 			throw new NullPointerException("copier == null");
 		}
 		this.in = in;
-		this.builder = builder;
+		this.factory = factory;
 		this.copier = copier;
 	}
 
@@ -83,7 +82,7 @@ final class GroupChannel<T> implements MessageChannel<T> {
 		@SuppressWarnings("unchecked")
 		final MessageChannel<T>[] channels = new MessageChannel[size];
 		for (int i = 0; i < size; i++) {
-			channels[i] = builder.open();
+			channels[i] = factory.open();
 		}
 		this.channels = channels;
 	}

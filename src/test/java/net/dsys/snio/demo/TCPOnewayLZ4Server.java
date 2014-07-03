@@ -49,7 +49,7 @@ public final class TCPOnewayLZ4Server {
 
 		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
 				.setPool(pool)
-				.setMessageCodec(Codecs.getLZ4Compression(length))
+				.setMessageCodec(Codecs.getLZ4Factory(length))
 				.useRingBuffer()
 				.open();
 

@@ -34,6 +34,7 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
+import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.api.pool.KeyAcceptor;
 import net.dsys.snio.api.pool.SelectorExecutor;
@@ -46,8 +47,9 @@ import net.dsys.snio.api.pool.SelectorThread;
 final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 
 	private final SelectorPool pool;
-	private final MessageCodec codec;
-	private final Factory<MessageBufferProvider<ByteBuffer>> factory;
+	private final Factory<MessageCodec> codecs;
+	private final Factory<RateLimiter> limiters;
+	private final Factory<MessageBufferProvider<ByteBuffer>> providers;
 	private final int sendSize;
 	private final int receiveSize;
 	private final SSLContext context;
@@ -58,17 +60,20 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	private CloseListener<ByteBuffer> close;
 	private SelectionKey acceptKey;
 
-	SSLAcceptor(final SelectorPool pool, final MessageCodec codec,
-			final Factory<MessageBufferProvider<ByteBuffer>> factory, final int sendSize,
+	SSLAcceptor(final SelectorPool pool, final Factory<MessageCodec> codecs, final Factory<RateLimiter> limiters,
+			final Factory<MessageBufferProvider<ByteBuffer>> providers, final int sendSize,
 			final int receiveSize, final SSLContext context) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}
-		if (codec == null) {
-			throw new IllegalArgumentException("codec == null");
+		if (codecs == null) {
+			throw new IllegalArgumentException("codecs == null");
 		}
-		if (factory == null) {
-			throw new IllegalArgumentException("factory == null");
+		if (limiters == null) {
+			throw new IllegalArgumentException("limiters == null");
+		}
+		if (providers == null) {
+			throw new IllegalArgumentException("providers == null");
 		}
 		if (sendSize < 1) {
 			throw new IllegalArgumentException("sendSize < 1");
@@ -80,8 +85,9 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 			throw new NullPointerException("context == null");
 		}
 		this.pool = pool;
-		this.codec = codec;
-		this.factory = factory;
+		this.codecs = codecs;
+		this.limiters = limiters;
+		this.providers = providers;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
 		this.context = context;
@@ -131,10 +137,12 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 		final SocketChannel client = server.accept();
 		client.configureBlocking(false);
 
-		final MessageBufferProvider<ByteBuffer> provider = factory.newInstance();
+		final MessageCodec codec = codecs.newInstance();
+		final RateLimiter limiter = limiters.newInstance();
+		final MessageBufferProvider<ByteBuffer> provider = providers.newInstance();
 		final SSLEngine engine = context.createSSLEngine();
 		engine.setUseClientMode(false);
-		final SSLProcessor processor = new SSLProcessor(codec, provider, sendSize, receiveSize, engine);
+		final SSLProcessor processor = new SSLProcessor(codec, limiter, provider, sendSize, receiveSize, engine);
 		final TCPChannel<ByteBuffer> channel = new TCPChannel<>(pool.next(), processor, client, close);
 		channel.open();
 		channel.register();

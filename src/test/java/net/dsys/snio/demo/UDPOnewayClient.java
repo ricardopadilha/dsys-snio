@@ -23,46 +23,46 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
+import net.dsys.snio.api.io.BinaryUnit;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 /**
- * Echo server using UDP.
+ * Echo client using UDP.
  * 
  * @author Ricardo Padilha
  */
-public final class UDPEchoServer {
+public final class UDPOnewayClient {
 
-	private UDPEchoServer() {
+	private UDPOnewayClient() {
 		return;
 	}
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int length = Integer.parseInt(getArg("length", "65262", args));
+		final int length = Integer.parseInt(getArg("length", "1024", args));
+		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
-		final SelectorPool pool = SelectorPools.open("server", threads);
-		final MessageChannel<ByteBuffer> server = MessageChannels.newUDPChannel()
+		final SelectorPool pool = SelectorPools.open("client", threads);
+		final MessageChannel<ByteBuffer> client = MessageChannels.newUDPChannel()
 				.setPool(pool)
 				.setMessageLength(length)
+				.setRateLimit(100, BinaryUnit.GIGABITS)
 				.useRingBuffer()
 				.open();
 
-		server.bind(new InetSocketAddress(port));
-		server.getBindFuture().get();
+		client.connect(new InetSocketAddress(host, port));
+		client.getConnectFuture().get();
 
-		final MessageBufferConsumer<ByteBuffer> in = server.getInputBuffer();
-		final MessageBufferProducer<ByteBuffer> out = server.getOutputBuffer();
+		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
 
-		// one thread per client
-		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
-		executor.execute(MessageHandlers.syncConsumer(in, new EchoServer(out)));
+		final ExecutorService executor = Executors.newCachedThreadPool();
+		executor.execute(MessageHandlers.syncProducer(out, new EchoProducer(new InetSocketAddress(host, port))));
 
 		pool.getCloseFuture().get();
 		executor.shutdown();

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.impl.channel;
+package net.dsys.snio.impl.channel.builder;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import net.dsys.commons.api.lang.Factory;
@@ -27,28 +26,24 @@ import net.dsys.commons.impl.lang.ByteBufferFactory;
 import net.dsys.commons.impl.lang.DirectByteBufferFactory;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
-import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.buffer.BlockingQueueProvider;
 import net.dsys.snio.impl.buffer.RingBufferProvider;
-import net.dsys.snio.impl.codec.Codecs;
 
 /**
  * @author Ricardo Padilha
  */
-public abstract class AbstractBuilder<S, T> {
+public final class CommonBuilderData<T> {
 
 	/**
 	 * Value obtained empirically on a 3rd gen Core i7. Lower values means
 	 * lower throughput, higher values mean more erratic throughput.
 	 */
 	private static final int DEFAULT_CAPACITY = 256;
-	//private static final int DEFAULT_LENGTH = 1024;
 	private static final int DEFAULT_BUFFER_SIZE = 0xFFFF;
 
 	private SelectorPool pool;
 	private int capacity;
-	private MessageCodec codec;
 	private int sendBufferSize;
 	private int receiveBufferSize;
 	private boolean useDirectBuffer;
@@ -56,9 +51,8 @@ public abstract class AbstractBuilder<S, T> {
 	private boolean singleInputBuffer;
 	private MessageBufferConsumer<T> consumer;
 
-	protected AbstractBuilder() {
+	public CommonBuilderData() {
 		capacity = DEFAULT_CAPACITY;
-		codec = null;
 		sendBufferSize = DEFAULT_BUFFER_SIZE;
 		receiveBufferSize = DEFAULT_BUFFER_SIZE;
 		useDirectBuffer = false;
@@ -68,7 +62,7 @@ public abstract class AbstractBuilder<S, T> {
 	}
 
 	@Mandatory(restrictions = "pool != null")
-	public final AbstractBuilder<S, T> setPool(final SelectorPool pool) {
+	public CommonBuilderData<T> setPool(final SelectorPool pool) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}
@@ -77,7 +71,7 @@ public abstract class AbstractBuilder<S, T> {
 	}
 
 	@Optional(defaultValue = "256", restrictions = "capacity > 0")
-	public final AbstractBuilder<S, T> setBufferCapacity(final int capacity) {
+	public CommonBuilderData<T> setBufferCapacity(final int capacity) {
 		if (capacity < 1) {
 			throw new IllegalArgumentException("capacity < 1");
 		}
@@ -86,7 +80,7 @@ public abstract class AbstractBuilder<S, T> {
 	}
 
 	@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
-	public final AbstractBuilder<S, T> setSendBufferSize(final int sendBufferSize) {
+	public CommonBuilderData<T> setSendBufferSize(final int sendBufferSize) {
 		if (sendBufferSize < 1) {
 			throw new IllegalArgumentException("sendBufferSize < 1");
 		}
@@ -95,7 +89,7 @@ public abstract class AbstractBuilder<S, T> {
 	}
 
 	@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
-	public final AbstractBuilder<S, T> setReceiveBufferSize(final int receiveBufferSize) {
+	public CommonBuilderData<T> setReceiveBufferSize(final int receiveBufferSize) {
 		if (receiveBufferSize < 1) {
 			throw new IllegalArgumentException("receiveBufferSize < 1");
 		}
@@ -103,57 +97,37 @@ public abstract class AbstractBuilder<S, T> {
 		return this;
 	}
 
-	@Mandatory(restrictions = "codec != null")
-	@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
-	public final AbstractBuilder<S, T> setMessageCodec(final MessageCodec codec) {
-		if (codec == null) {
-			throw new NullPointerException("codec == null");
-		}
-		this.codec = codec;
-		return this;
-	}
-
-	@Mandatory(restrictions = "length > 0")
-	@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codec)")
-	public final AbstractBuilder<S, T> setMessageLength(final int length) {
-		if (length < 1) {
-			throw new IllegalArgumentException("length < 1");
-		}
-		this.codec = Codecs.getDefault(length);
-		return this;
-	}
-
 	@Optional(defaultValue = "useHeapBuffer()")
 	@OptionGroup(name = "bufferType", seeAlso = "useHeapBuffer()")
-	public final AbstractBuilder<S, T> useDirectBuffer() {
+	public CommonBuilderData<T> useDirectBuffer() {
 		this.useDirectBuffer = true;
 		return this;
 	}
 
 	@Optional(defaultValue = "useHeapBuffer()")
 	@OptionGroup(name = "bufferType", seeAlso = "useDirectBuffer()")
-	public final AbstractBuilder<S, T> useHeapBuffer() {
+	public CommonBuilderData<T> useHeapBuffer() {
 		this.useDirectBuffer = false;
 		return this;
 	}
 
 	@Optional(defaultValue = "useBlockingQueue()", restrictions = "requires disruptor library")
 	@OptionGroup(name = "bufferImplementation", seeAlso = "useBlockingQueue()")
-	public final AbstractBuilder<S, T> useRingBuffer() {
+	public CommonBuilderData<T> useRingBuffer() {
 		this.useRingBuffer = true;
 		return this;
 	}
 
 	@Optional(defaultValue = "useBlockingQueue()")
 	@OptionGroup(name = "bufferImplementation", seeAlso = "useRingBuffer()")
-	public final AbstractBuilder<S, T> useBlockingQueue() {
+	public CommonBuilderData<T> useBlockingQueue() {
 		this.useRingBuffer = false;
 		return this;
 	}
 
 	@Optional(defaultValue = "useMultipleInputBuffers()")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(consumer), useMultipleInputBuffers()")
-	public final AbstractBuilder<S, T> useSingleInputBuffer() {
+	public CommonBuilderData<T> useSingleInputBuffer() {
 		this.singleInputBuffer = true;
 		this.consumer = null;
 		return this;
@@ -161,7 +135,7 @@ public abstract class AbstractBuilder<S, T> {
 
 	@Optional(defaultValue = "useMultipleInputBuffers()", restrictions = "consumer != null")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useMultipleInputBuffers()")
-	public final AbstractBuilder<S, T> useSingleInputBuffer(final MessageBufferConsumer<T> consumer) {
+	public CommonBuilderData<T> useSingleInputBuffer(final MessageBufferConsumer<T> consumer) {
 		this.singleInputBuffer = true;
 		this.consumer = consumer;
 		return this;
@@ -169,52 +143,44 @@ public abstract class AbstractBuilder<S, T> {
 
 	@Optional(defaultValue = "useMultipleInputBuffers()")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useSingleInputBuffer(consumer)")
-	public final AbstractBuilder<S, T> useMultipleInputBuffers() {
+	public CommonBuilderData<T> useMultipleInputBuffers() {
 		this.singleInputBuffer = false;
 		this.consumer = null;
 		return this;
 	}
 
-	protected final SelectorPool getPool() {
+	public SelectorPool getPool() {
 		return pool;
 	}
 
-	protected final MessageCodec getMessageCodec() {
-		return codec;
-	}
-
-	protected final int getCapacity() {
+	public int getCapacity() {
 		return capacity;
 	}
 
-	protected final MessageCodec getCodec() {
-		return codec;
-	}
-
-	protected final int getSendBufferSize() {
+	public int getSendBufferSize() {
 		return sendBufferSize;
 	}
 
-	protected final int getReceiveBufferSize() {
+	public int getReceiveBufferSize() {
 		return receiveBufferSize;
 	}
 
-	protected final boolean isDirectBuffer() {
+	public boolean isDirectBuffer() {
 		return useDirectBuffer;
 	}
 
-	protected final Factory<ByteBuffer> getFactory(final int length) {
+	public Factory<ByteBuffer> getFactory(final int length) {
 		if (useDirectBuffer) {
 			return new DirectByteBufferFactory(length);
 		}
 		return new ByteBufferFactory(length);
 	}
 
-	protected final boolean isRingBuffer() {
+	public boolean isRingBuffer() {
 		return useRingBuffer;
 	}
 
-	protected final MessageBufferProvider<T> getProvider(final Factory<T> factory) {
+	public MessageBufferProvider<T> getProvider(final Factory<T> factory) {
 		final MessageBufferProvider<T> provider;
 		if (useRingBuffer) {
 			if (singleInputBuffer) {
@@ -240,7 +206,7 @@ public abstract class AbstractBuilder<S, T> {
 		return provider;
 	}
 
-	protected final Factory<MessageBufferProvider<T>> getProviderFactory(final Factory<T> factory) {
+	public Factory<MessageBufferProvider<T>> getProviderFactory(final Factory<T> factory) {
 		final Factory<MessageBufferProvider<T>> provider;
 		if (useRingBuffer) {
 			if (singleInputBuffer) {
@@ -265,7 +231,4 @@ public abstract class AbstractBuilder<S, T> {
 		}
 		return provider;
 	}
-
-	public abstract S open() throws IOException;
-
 }

@@ -39,6 +39,7 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
+import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
 
 /**
@@ -49,6 +50,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	private static final int NO_SEQUENCE = -1;
 
 	private final MessageCodec codec;
+	private final RateLimiter limiter;
 	private final SSLEngine engine;
 	private final int sendSize;
 	private final int receiveSize;
@@ -62,11 +64,15 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	private volatile boolean closedInternally;
 	private volatile boolean closed;
 
-	SSLProcessor(final MessageCodec codec, final MessageBufferProvider<ByteBuffer> provider,
+	SSLProcessor(final MessageCodec codec, final RateLimiter limiter,
+			final MessageBufferProvider<ByteBuffer> provider,
 			final int sendBufferSize, final int receiveBufferSize, final SSLEngine engine) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
+		}
+		if (limiter == null) {
+			throw new NullPointerException("limiter == null");
 		}
 		if (engine == null) {
 			throw new NullPointerException("engine == null");
@@ -81,7 +87,8 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 			throw new IllegalArgumentException("receiveSize < 1");
 		}
 
-		this.codec = codec.clone();
+		this.codec = codec;
+		this.limiter = limiter;
 		this.engine = engine;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
@@ -148,6 +155,9 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 			closedInternally = true;
 			return n;
 		}
+
+		limiter.receive(n);
+
 		receiveBuffer.flip();
 
 		// SSL handling
@@ -269,7 +279,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 					writeSequence = chnIn.acquire();
 				}
 				final ByteBuffer msg = chnIn.get(writeSequence);
-				final int msglen = codec.length(msg);
+				final int msglen = codec.getEncodedLength(msg);
 				if (msglen > preSendBuffer.capacity()) {
 					// this message is too big for the current buffer
 					throw new IOException("codec.length(msg) > preSendBuffer.capacity()");
@@ -349,6 +359,8 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 			}
 		}
 		sendBuffer.flip();
+
+		limiter.send(sendBuffer.remaining());
 
 		final int n = channel.write(sendBuffer);
 		if (sendBuffer.remaining() > 0) {

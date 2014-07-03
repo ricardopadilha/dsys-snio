@@ -39,36 +39,25 @@ import net.jpountz.lz4.LZ4FastDecompressor;
  */
 final class LZ4CompressionCodec implements MessageCodec {
 
-	private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
+	private static final int UNSIGNED_INT_MASK = Integer.MAX_VALUE;
 
-	private static final int SHORT_LENGTH = Short.SIZE / Byte.SIZE;
-	private static final int HEADER_LENGTH = 2 * SHORT_LENGTH;
+	private static final int INT_LENGTH = Integer.SIZE / Byte.SIZE;
+	private static final int HEADER_LENGTH = 2 * INT_LENGTH;
 	private static final int FOOTER_LENGTH = 0;
-	/**
-	 * LZ4 has a 271 byte overhead in 65523 bytes, which translates into an
-	 * effective 65252 bytes payload.
-	 */
-	private static final int MAX_LZ4_OVERHEAD = 271;
-	private static final int MAX_BODY_LENGTH = Codecs.MAX_DATAGRAM_PAYLOAD - HEADER_LENGTH - MAX_LZ4_OVERHEAD;
+	private static final int MAX_BODY_LENGTH = maxUncompressedLength(UNSIGNED_INT_MASK) - HEADER_LENGTH;
 
 	private final int headerLength;
 	private final int bodyLength;
 	private final int compressedLength;
 	private final int footerLength;
 	private final int frameLength;
+
 	private final LZ4Compressor compressor;
 	private final LZ4FastDecompressor decompressor;
 	private final byte[] compressInput;
 	private final byte[] compressOutput;
 	private final byte[] decompressInput;
 	private final byte[] decompressOutput;
-
-	/**
-	 * Returns an instance for the maximum body length
-	 */
-	LZ4CompressionCodec() {
-		this(MAX_BODY_LENGTH);
-	}
 
 	LZ4CompressionCodec(final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
@@ -83,9 +72,6 @@ final class LZ4CompressionCodec implements MessageCodec {
 		this.compressedLength = compressor.maxCompressedLength(bodyLength);
 		this.footerLength = FOOTER_LENGTH;
 		this.frameLength = headerLength + compressedLength + footerLength;
-		if (frameLength > Codecs.MAX_DATAGRAM_PAYLOAD) {
-			throw new IllegalArgumentException("frameLength > 65527: " + frameLength);
-		}
 
 		this.compressInput = new byte[this.bodyLength];
 		this.compressOutput = new byte[compressedLength];
@@ -93,16 +79,10 @@ final class LZ4CompressionCodec implements MessageCodec {
 		this.decompressOutput = new byte[this.bodyLength];
 	}
 
-	static int getMaxBodyLength() {
-		return MAX_BODY_LENGTH;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageCodec clone() {
-		return new LZ4CompressionCodec(bodyLength);
+	private static int maxUncompressedLength(final int length) {
+		final LZ4Compressor c = LZ4Factory.fastestInstance().fastCompressor();
+		final int compressed = c.maxCompressedLength(length);
+		return Math.abs(compressed - length);
 	}
 
 	/**
@@ -141,7 +121,7 @@ final class LZ4CompressionCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public int length(final ByteBuffer in) {
+	public int getEncodedLength(final ByteBuffer in) {
 		return headerLength + compressor.maxCompressedLength(in.remaining());
 	}
 
@@ -194,8 +174,8 @@ final class LZ4CompressionCodec implements MessageCodec {
 		} catch (final LZ4Exception e) {
 			throw new InvalidMessageException(e);
 		}
-		out.putShort((short) (compressed + SHORT_LENGTH));
-		out.putShort((short) decompressed);
+		out.putInt(compressed + INT_LENGTH);
+		out.putInt(decompressed);
 		if (out.hasArray()) {
 			out.position(out.position() + compressed);
 		} else {
@@ -212,11 +192,11 @@ final class LZ4CompressionCodec implements MessageCodec {
 		if (rem < headerLength) {
 			return false;
 		}
-		final int compressed = (in.getShort(in.position()) & UNSIGNED_SHORT_MASK) - SHORT_LENGTH;
+		final int compressed = (in.getInt(in.position()) & UNSIGNED_INT_MASK) - INT_LENGTH;
 		if (compressed < 1 || compressed > compressedLength) {
 			throw new InvalidLengthException(compressed);
 		}
-		final int decompressed = in.getShort(in.position() + SHORT_LENGTH) & UNSIGNED_SHORT_MASK;
+		final int decompressed = in.getInt(in.position() + INT_LENGTH) & UNSIGNED_INT_MASK;
 		if (decompressed < 1 || decompressed > bodyLength) {
 			throw new InvalidLengthException(decompressed);
 		}
@@ -227,9 +207,17 @@ final class LZ4CompressionCodec implements MessageCodec {
 	 * {@inheritDoc}
 	 */
 	@Override
+	public int getDecodedLength(final ByteBuffer in) {
+		return in.getInt(in.position()) & UNSIGNED_INT_MASK;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
 	public void get(final ByteBuffer in, final ByteBuffer out) throws InvalidEncodingException {
-		final int compressed = (in.getShort() & UNSIGNED_SHORT_MASK) - SHORT_LENGTH;
-		final int decompressed = in.getShort() & UNSIGNED_SHORT_MASK;
+		final int compressed = (in.getInt() & UNSIGNED_INT_MASK) - INT_LENGTH;
+		final int decompressed = in.getInt() & UNSIGNED_INT_MASK;
 
 		final byte[] arrayIn;
 		final int offsetIn;

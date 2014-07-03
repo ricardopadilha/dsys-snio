@@ -44,7 +44,7 @@ public final class UDPEchoClient {
 
 	public static void main(final String[] args) throws IOException, InterruptedException, ExecutionException {
 		final int threads = Integer.parseInt(getArg("threads", "1", args));
-		final int length = Integer.parseInt(getArg("length", "1024", args));
+		final int length = Integer.parseInt(getArg("length", "65262", args));
 		final String host = getArg("host", "localhost", args);
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
@@ -54,6 +54,9 @@ public final class UDPEchoClient {
 				.setMessageLength(length)
 				.useRingBuffer()
 				.open();
+
+		client.connect(new InetSocketAddress(host, port));
+		client.getConnectFuture().get();
 
 		final MessageBufferConsumer<ByteBuffer> in = client.getInputBuffer();
 		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();

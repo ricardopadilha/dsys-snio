@@ -23,12 +23,7 @@ import java.nio.ByteBuffer;
  * 
  * @author Ricardo Padilha
  */
-public interface MessageCodec extends Cloneable {
-
-	/**
-	 * {@inheritDoc}
-	 */
-	MessageCodec clone();
+public interface MessageCodec {
 
 	/**
 	 * @return maximum length of the message header
@@ -53,7 +48,7 @@ public interface MessageCodec extends Cloneable {
 	/**
 	 * @return the length of the given {@link ByteBuffer} after encoding
 	 */
-	int length(ByteBuffer out);
+	int getEncodedLength(ByteBuffer out);
 
 	/**
 	 * @return <code>true</code> if the {@link ByteBuffer} fits in a frame
@@ -77,6 +72,13 @@ public interface MessageCodec extends Cloneable {
 	 *             if the length encoded in the stream invalid.
 	 */
 	boolean hasNext(ByteBuffer in) throws InvalidEncodingException;
+
+	/**
+	 * Only call after {@link #hasNext(ByteBuffer)} returns <code>true</code>.
+	 * 
+	 * @return the length of the given {@link ByteBuffer} after decoding
+	 */
+	int getDecodedLength(ByteBuffer in);
 
 	/**
 	 * @param in
