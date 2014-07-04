@@ -19,6 +19,7 @@ package net.dsys.snio.impl.group;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.commons.impl.builder.Mandatory;
@@ -30,7 +31,6 @@ import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
-import net.dsys.snio.api.io.BinaryUnit;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.buffer.BlockingQueueProvider;
 import net.dsys.snio.impl.buffer.RingBufferProvider;

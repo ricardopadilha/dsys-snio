@@ -16,9 +16,9 @@
 
 package net.dsys.snio.impl.channel;
 
+import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.channel.RateLimiter;
-import net.dsys.snio.api.io.BinaryUnit;
 
 /**
  * @author Ricardo Padilha

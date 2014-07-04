@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.commons.impl.builder.Mandatory;
 import net.dsys.commons.impl.builder.OptionGroup;
@@ -31,7 +32,6 @@ import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
-import net.dsys.snio.api.io.BinaryUnit;
 import net.dsys.snio.api.pool.KeyProcessor;
 import net.dsys.snio.api.pool.SelectorExecutor;
 import net.dsys.snio.api.pool.SelectorPool;

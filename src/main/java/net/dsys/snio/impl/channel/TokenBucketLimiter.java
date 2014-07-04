@@ -18,8 +18,8 @@ package net.dsys.snio.impl.channel;
 
 import java.util.concurrent.TimeUnit;
 
+import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.snio.api.channel.RateLimiter;
-import net.dsys.snio.api.io.BinaryUnit;
 
 import org.isomorphism.util.TokenBucket;
 import org.isomorphism.util.TokenBuckets;

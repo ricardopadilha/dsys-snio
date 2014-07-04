@@ -16,7 +16,7 @@
 
 package net.dsys.snio.api.channel;
 
-import net.dsys.snio.api.io.BinaryUnit;
+import net.dsys.commons.api.lang.BinaryUnit;
 
 /**
  * @author Ricardo Padilha
