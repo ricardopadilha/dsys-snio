@@ -29,6 +29,16 @@ import org.isomorphism.util.TokenBuckets;
  */
 final class TokenBucketLimiter implements RateLimiter {
 
+	/**
+	 * Refill rate constants.
+	 * These translate to "refill each 100ms with a 10th of the refill rate." 
+	 */
+	private static final int REFILL_FACTOR = 10;
+	private static final int REFILL_INTERVAL = 100;
+	private static final TimeUnit REFILL_UNIT = TimeUnit.MILLISECONDS;
+	private static final int BASE_INTERVAL = 1;
+	private static final TimeUnit BASE_UNIT = TimeUnit.SECONDS;
+
 	private TokenBucket send;
 	private TokenBucket recv;
 
@@ -36,15 +46,24 @@ final class TokenBucketLimiter implements RateLimiter {
 		setRate(value, unit);
 	}
 
-	private static TokenBucket createBucket(final long bytes) {
+	private static TokenBucket createBucket(final long bits) {
 		// Instead of refilling once per second, we refill 10 times per second.
 		// It makes for a smoother bandwidth curve under very low rates,
 		// e.g., less than 100 kbps.
-		final long refillRate = Math.max(1, bytes / 10);
+		final long bytes = bits / Byte.SIZE;
+		final long refillRate = bytes / REFILL_FACTOR;
+		// if the division caused an underflow, revert to base units.
+		if (refillRate < 1) {
+			return TokenBuckets.builder()
+				.withCapacity(bytes)
+				.withYieldingSleepStrategy()
+				.withFixedIntervalRefillStrategy(bytes, BASE_INTERVAL, BASE_UNIT)
+				.build();
+		}
 		return TokenBuckets.builder()
 			.withCapacity(bytes)
 			.withYieldingSleepStrategy()
-			.withFixedIntervalRefillStrategy(refillRate, 100, TimeUnit.MILLISECONDS)
+			.withFixedIntervalRefillStrategy(refillRate, REFILL_INTERVAL, REFILL_UNIT)
 			.build();
 	}
 
@@ -56,9 +75,9 @@ final class TokenBucketLimiter implements RateLimiter {
 		if (value < 1) {
 			throw new IllegalArgumentException("value < 1");
 		}
-		final long bytes = unit.toBits(value) / Byte.SIZE;
-		this.send = createBucket(bytes);
-		this.recv = createBucket(bytes);
+		final long bits = unit.toBits(value);
+		this.send = createBucket(bits);
+		this.recv = createBucket(bits);
 	}
 
 	/**
