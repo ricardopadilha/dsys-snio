@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.impl.channel;
+package net.dsys.snio.impl.limit;
 
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
-import net.dsys.snio.api.channel.RateLimiter;
+import net.dsys.snio.api.limit.RateLimiter;
 
 /**
  * @author Ricardo Padilha
@@ -30,6 +30,15 @@ public final class RateLimiters {
 	 */
 	private static final RateLimiter NO_LIMIT = new NullLimiter();
 
+	private static final Factory<RateLimiter> NO_LIMIT_FACTORY = new Factory<RateLimiter>() {
+		@SuppressWarnings("synthetic-access")
+		private final RateLimiter instance = NO_LIMIT;
+		@Override
+		public RateLimiter newInstance() {
+			return instance;
+		}
+	};
+
 	private RateLimiters() {
 		// no instantiation
 	}
@@ -39,13 +48,7 @@ public final class RateLimiters {
 	}
 
 	public static Factory<RateLimiter> noLimitFactory() {
-		return new Factory<RateLimiter>() {
-			@Override
-			@SuppressWarnings("synthetic-access")
-			public RateLimiter newInstance() {
-				return NO_LIMIT;
-			}
-		};
+		return NO_LIMIT_FACTORY;
 	}
 
 	public static RateLimiter limit(final long value, final BinaryUnit unit) {

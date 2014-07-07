@@ -14,41 +14,19 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.impl.channel;
+package net.dsys.snio.api.limit;
 
 import net.dsys.commons.api.lang.BinaryUnit;
-import net.dsys.snio.api.channel.RateLimiter;
 
 /**
  * @author Ricardo Padilha
  */
-final class NullLimiter implements RateLimiter {
+public interface RateLimiter {
 
-	NullLimiter() {
-		super();
-	}
+	void setRate(long value, BinaryUnit unit);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void setRate(final long value, final BinaryUnit unit) {
-		return;
-	}
+	void send(long bytes);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void send(final long bytes) {
-		return;
-	}
+	void receive(long bytes);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void receive(final long bytes) {
-		return;
-	}
 }

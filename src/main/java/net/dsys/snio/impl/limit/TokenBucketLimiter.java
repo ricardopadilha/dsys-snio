@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.impl.channel;
+package net.dsys.snio.impl.limit;
 
 import java.util.concurrent.TimeUnit;
 
 import net.dsys.commons.api.lang.BinaryUnit;
-import net.dsys.snio.api.channel.RateLimiter;
+import net.dsys.snio.api.limit.RateLimiter;
 
 import org.isomorphism.util.TokenBucket;
 import org.isomorphism.util.TokenBuckets;

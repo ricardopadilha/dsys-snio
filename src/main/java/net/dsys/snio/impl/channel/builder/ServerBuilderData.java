@@ -20,10 +20,10 @@ import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.commons.impl.builder.Mandatory;
 import net.dsys.commons.impl.builder.OptionGroup;
-import net.dsys.snio.api.channel.RateLimiter;
 import net.dsys.snio.api.codec.MessageCodec;
-import net.dsys.snio.impl.channel.RateLimiters;
+import net.dsys.snio.api.limit.RateLimiter;
 import net.dsys.snio.impl.codec.Codecs;
+import net.dsys.snio.impl.limit.RateLimiters;
 
 /**
  * @author Ricardo Padilha
