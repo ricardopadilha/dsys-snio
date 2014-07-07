@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.NetworkChannel;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -176,7 +175,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		return loop;
 	}
 
-	<S extends SelectableChannel & NetworkChannel> void bind(final S channel, final Acceptor acceptor) {
+	void bind(final SelectableChannel channel, final Acceptor acceptor) {
 		final IOOperation bind = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -191,13 +190,13 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @throws ClosedChannelException
 	 */
-	<S extends SelectableChannel & NetworkChannel> void doBind(final S channel, final Acceptor acceptor)
+	void doBind(final SelectableChannel channel, final Acceptor acceptor)
 			throws IOException {
 		final SelectionKey key = channel.register(selector, SelectionKey.OP_ACCEPT, acceptor);
 		acceptor.getAcceptor().registered(this, key);
 	}
 
-	<S extends SelectableChannel & NetworkChannel> void connect(final S channel, final Processor processor) {
+	void connect(final SelectableChannel channel, final Processor processor) {
 		final IOOperation bind = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -212,7 +211,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @throws ClosedChannelException
 	 */
-	<S extends SelectableChannel & NetworkChannel> void doConnect(final S channel, final Processor processor)
+	void doConnect(final SelectableChannel channel, final Processor processor)
 			throws IOException {
 		if ((channel.validOps() & SelectionKey.OP_CONNECT) != 0) {
 			final SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT, processor);
@@ -220,7 +219,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	<S extends SelectableChannel & NetworkChannel> void register(final S channel, final Processor processor) {
+	void register(final SelectableChannel channel, final Processor processor) {
 		final IOOperation register = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -235,7 +234,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @throws ClosedChannelException
 	 */
-	<S extends SelectableChannel & NetworkChannel> void doRegister(final S channel, final Processor processor) {
+	void doRegister(final SelectableChannel channel, final Processor processor) {
 		try {
 			final SelectionKey key = channel.register(selector, type.getOp(), processor);
 			processor.getProcessor().registered(this, key, type);

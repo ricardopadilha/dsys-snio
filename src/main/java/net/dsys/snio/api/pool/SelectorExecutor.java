@@ -16,7 +16,6 @@
 
 package net.dsys.snio.api.pool;
 
-import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
@@ -28,11 +27,11 @@ import net.dsys.commons.impl.future.SettableCallbackFuture;
  */
 public interface SelectorExecutor {
 
-	<S extends SelectableChannel & NetworkChannel> void bind(S channel, Acceptor acceptor);
+	void bind(SelectableChannel channel, Acceptor acceptor);
 
-	<S extends SelectableChannel & NetworkChannel> void connect(S channel, Processor processor);
+	void connect(SelectableChannel channel, Processor processor);
 
-	<S extends SelectableChannel & NetworkChannel> void register(S channel, Processor processor);
+	void register(SelectableChannel channel, Processor processor);
 
 	void cancelBind(SelectionKey key, SettableCallbackFuture<Void> future, Callable<Void> task);
 

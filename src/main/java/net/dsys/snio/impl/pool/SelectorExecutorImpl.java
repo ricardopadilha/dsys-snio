@@ -17,7 +17,6 @@
 package net.dsys.snio.impl.pool;
 
 import java.io.IOException;
-import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
@@ -76,7 +75,7 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <S extends SelectableChannel & NetworkChannel> void bind(final S channel, final Acceptor acceptor) {
+	public void bind(final SelectableChannel channel, final Acceptor acceptor) {
 		if ((channel.validOps() & SelectionKey.OP_ACCEPT) == 0) {
 			throw new IllegalArgumentException("channel does not support SelectionKey.OP_ACCEPT");
 		}
@@ -92,7 +91,7 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <S extends SelectableChannel & NetworkChannel> void connect(final S channel, final Processor processor) {
+	public void connect(final SelectableChannel channel, final Processor processor) {
 		reader.connect(channel, processor);
 	}
 
@@ -100,7 +99,7 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public <S extends SelectableChannel & NetworkChannel> void register(final S channel, final Processor processor) {
+	public void register(final SelectableChannel channel, final Processor processor) {
 		reader.register(channel, processor);
 		writer.register(channel, processor);
 	}
