@@ -18,6 +18,8 @@ package net.dsys.snio.api.handler;
 
 import java.io.Closeable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.channel.AcceptListener;
 
 /**
@@ -25,6 +27,7 @@ import net.dsys.snio.api.channel.AcceptListener;
  */
 public interface MessageHandler<T> extends Closeable {
 
+	@Nonnull
 	AcceptListener<T> getAcceptListener();
 	
 }

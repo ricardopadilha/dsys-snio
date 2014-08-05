@@ -25,6 +25,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
@@ -60,9 +62,12 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	private CloseListener<ByteBuffer> close;
 	private SelectionKey acceptKey;
 
-	SSLAcceptor(final SelectorPool pool, final Factory<MessageCodec> codecs, final Factory<RateLimiter> limiters,
-			final Factory<MessageBufferProvider<ByteBuffer>> providers, final int sendSize,
-			final int receiveSize, final SSLContext context) {
+	SSLAcceptor(@Nonnull final SelectorPool pool, @Nonnull final Factory<MessageCodec> codecs,
+			@Nonnull final Factory<RateLimiter> limiters,
+			@Nonnull final Factory<MessageBufferProvider<ByteBuffer>> providers,
+			@Nonnegative final int sendSize,
+			@Nonnegative final int receiveSize,
+			@Nonnull final SSLContext context) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}

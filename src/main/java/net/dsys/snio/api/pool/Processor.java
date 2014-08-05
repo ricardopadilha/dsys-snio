@@ -18,11 +18,14 @@ package net.dsys.snio.api.pool;
 
 import java.io.Closeable;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
 public interface Processor extends Closeable {
 
+	@Nonnull
 	KeyProcessor<?> getProcessor();
 
 }

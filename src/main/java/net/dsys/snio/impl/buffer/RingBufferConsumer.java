@@ -16,6 +16,8 @@
 
 package net.dsys.snio.impl.buffer;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.buffer.InterruptedByClose;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 
@@ -38,7 +40,7 @@ final class RingBufferConsumer<T> implements MessageBufferConsumer<T> {
 	private long available;
 	private boolean closed;
 
-	RingBufferConsumer(final RingBuffer<T> buffer, final Object[] attachments) {
+	RingBufferConsumer(@Nonnull final RingBuffer<T> buffer, @Nonnull final Object[] attachments) {
 		if (buffer == null) {
 			throw new NullPointerException("buffer == null");
 		}

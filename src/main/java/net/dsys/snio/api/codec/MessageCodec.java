@@ -18,6 +18,9 @@ package net.dsys.snio.api.codec;
 
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 /**
  * Interface definition for framing and delimitation of messages.
  * 
@@ -28,34 +31,39 @@ public interface MessageCodec {
 	/**
 	 * @return maximum length of the message header
 	 */
+	@Nonnegative
 	int getHeaderLength();
 
 	/**
 	 * @return maximum length of the message body
 	 */
+	@Nonnegative
 	int getBodyLength();
 
 	/**
 	 * @return maximum length of the message footer
 	 */
+	@Nonnegative
 	int getFooterLength();
 
 	/**
 	 * @return maximum frame length
 	 */
+	@Nonnegative
 	int getFrameLength();
 
 	/**
 	 * @return the length of the given {@link ByteBuffer} after encoding
 	 */
-	int getEncodedLength(ByteBuffer out);
+	@Nonnegative
+	int getEncodedLength(@Nonnull ByteBuffer out);
 
 	/**
 	 * @return <code>true</code> if the {@link ByteBuffer} fits in a frame
 	 * @throws InvalidLengthException
 	 *             if the message body is longer than {@link #getBodyLength()}
 	 */
-	boolean isValid(ByteBuffer out);
+	boolean isValid(@Nonnull ByteBuffer out);
 
 	/**
 	 * @param in
@@ -63,7 +71,7 @@ public interface MessageCodec {
 	 * @param out
 	 *            {@link ByteBuffer} where the message will be placed
 	 */
-	void put(ByteBuffer in, ByteBuffer out) throws InvalidMessageException;
+	void put(@Nonnull ByteBuffer in, @Nonnull ByteBuffer out) throws InvalidMessageException;
 
 	/**
 	 * @return <code>true</code> if there is a frame inside that
@@ -71,14 +79,15 @@ public interface MessageCodec {
 	 * @throws InvalidLengthException
 	 *             if the length encoded in the stream invalid.
 	 */
-	boolean hasNext(ByteBuffer in) throws InvalidEncodingException;
+	boolean hasNext(@Nonnull ByteBuffer in) throws InvalidEncodingException;
 
 	/**
 	 * Only call after {@link #hasNext(ByteBuffer)} returns <code>true</code>.
 	 * 
 	 * @return the length of the given {@link ByteBuffer} after decoding
 	 */
-	int getDecodedLength(ByteBuffer in);
+	@Nonnegative
+	int getDecodedLength(@Nonnull ByteBuffer in);
 
 	/**
 	 * @param in
@@ -86,7 +95,7 @@ public interface MessageCodec {
 	 * @param out
 	 *            {@link ByteBuffer} where the message body will be placed
 	 */
-	void get(ByteBuffer in, ByteBuffer out) throws InvalidEncodingException;
+	void get(@Nonnull ByteBuffer in, @Nonnull ByteBuffer out) throws InvalidEncodingException;
 
 	/**
 	 * Close this codec, releasing any resources.

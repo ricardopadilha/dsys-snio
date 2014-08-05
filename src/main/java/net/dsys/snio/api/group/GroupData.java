@@ -16,13 +16,18 @@
 
 package net.dsys.snio.api.group;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
 public interface GroupData<T> extends Iterable<T> {
 
+	@Nonnegative
 	int size();
 
-	T get(int index);
+	@Nonnull
+	T get(@Nonnegative int index);
 
 }

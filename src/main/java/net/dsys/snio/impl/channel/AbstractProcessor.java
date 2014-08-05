@@ -23,6 +23,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.MergingCallbackFuture;
@@ -58,7 +60,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 	private SelectionKey readKey;
 	private SelectionKey writeKey;
 
-	protected AbstractProcessor(final MessageBufferProvider<T> provider) {
+	protected AbstractProcessor(@Nonnull final MessageBufferProvider<T> provider) {
 		if (provider == null) {
 			throw new NullPointerException("provider == null");
 		}
@@ -88,6 +90,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		return connectFuture;
 	}
 
+	@Nonnull
 	protected final SettableCallbackFuture<Void> getConnectReadFuture() {
 		return connectReadFuture;
 	}
@@ -127,8 +130,8 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		}
 	}
 
-	protected abstract void readRegistered(SelectionKey key);
-	protected abstract void writeRegistered(SelectionKey key);
+	protected abstract void readRegistered(@Nonnull SelectionKey key);
+	protected abstract void writeRegistered(@Nonnull SelectionKey key);
 
 	/**
 	 * {@inheritDoc}
@@ -163,10 +166,12 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		return appOut;
 	}
 
+	@Nonnull
 	protected final MessageBufferConsumer<T> getChannelInput() {
 		return chnIn;
 	}
 
+	@Nonnull
 	protected final MessageBufferProducer<T> getChannelOutput() {
 		return chnOut;
 	}
@@ -188,7 +193,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 		shutdown(shutdownFuture, task);
 	}
 
-	final void shutdown(final SelectorExecutor executor) {
+	final void shutdown(@Nonnull final SelectorExecutor executor) {
 		provider.close();
 		executor.cancelConnect(readKey, closeReadFuture, writeKey, closeWriteFuture);
 	}
@@ -197,7 +202,7 @@ abstract class AbstractProcessor<T> implements KeyProcessor<T> {
 	 * Subclasses need to start shutdown upon call, then once done run the task,
 	 * and set the output of the future.
 	 */
-	protected abstract void shutdown(SettableCallbackFuture<Void> future, Callable<Void> task);
+	protected abstract void shutdown(@Nonnull SettableCallbackFuture<Void> future, @Nonnull Callable<Void> task);
 
 	/**
 	 * {@inheritDoc}

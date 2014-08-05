@@ -16,6 +16,9 @@
 
 package net.dsys.snio.impl.limit;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.limit.RateLimiter;
@@ -43,19 +46,23 @@ public final class RateLimiters {
 		// no instantiation
 	}
 
+	@Nonnull
 	public static RateLimiter noRateLimit() {
 		return NO_LIMIT;
 	}
 
+	@Nonnull
 	public static Factory<RateLimiter> noLimitFactory() {
 		return NO_LIMIT_FACTORY;
 	}
 
-	public static RateLimiter limit(final long value, final BinaryUnit unit) {
+	@Nonnull
+	public static RateLimiter limit(@Nonnegative final long value, @Nonnull final BinaryUnit unit) {
 		return new TokenBucketLimiter(value, unit);
 	}
 
-	public static Factory<RateLimiter> limitFactory(final long value, final BinaryUnit unit) {
+	@Nonnull
+	public static Factory<RateLimiter> limitFactory(@Nonnegative final long value, @Nonnull final BinaryUnit unit) {
 		return new Factory<RateLimiter>() {
 			@Override
 			public RateLimiter newInstance() {

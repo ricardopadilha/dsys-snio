@@ -18,11 +18,13 @@ package net.dsys.snio.api.pool;
 
 import java.nio.channels.SelectionKey;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
 public interface SelectorThread {
 
-	void enableKey(SelectionKey key);
+	void enableKey(@Nonnull SelectionKey key);
 
 }

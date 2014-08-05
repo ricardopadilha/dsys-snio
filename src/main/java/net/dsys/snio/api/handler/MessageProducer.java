@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.handler;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -25,6 +27,7 @@ public interface MessageProducer<T> {
 	 * @param message to be filled
 	 * @return attachment
 	 */
-	Object produce(T holder);
+	@Nonnull
+	Object produce(@Nonnull T holder);
 
 }

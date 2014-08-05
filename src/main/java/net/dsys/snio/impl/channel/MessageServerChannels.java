@@ -19,6 +19,9 @@ package net.dsys.snio.impl.channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
 import javax.net.ssl.SSLContext;
 
 import net.dsys.commons.api.lang.BinaryUnit;
@@ -47,10 +50,12 @@ public final class MessageServerChannels {
 		// no instantiation
 	}
 
+	@Nonnull
 	public static TCPServerChannelBuilder newTCPServerChannel() {
 		return new TCPServerChannelBuilder();
 	}
 
+	@Nonnull
 	public static SSLServerChannelBuilder newSSLServerChannel() {
 		return new SSLServerChannelBuilder();
 	}
@@ -58,6 +63,7 @@ public final class MessageServerChannels {
 	/**
 	 * @author Ricardo Padilha
 	 */
+	@ParametersAreNonnullByDefault
 	public static final class TCPServerChannelBuilder {
 
 		private final CommonBuilderData<ByteBuffer> common;
@@ -75,19 +81,19 @@ public final class MessageServerChannels {
 		}
 
 		@Optional(defaultValue = "256", restrictions = "capacity > 0")
-		public TCPServerChannelBuilder setBufferCapacity(final int capacity) {
+		public TCPServerChannelBuilder setBufferCapacity(@Nonnegative final int capacity) {
 			common.setBufferCapacity(capacity);
 			return this;
 		}
 
 		@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
-		public TCPServerChannelBuilder setSendBufferSize(final int sendBufferSize) {
+		public TCPServerChannelBuilder setSendBufferSize(@Nonnegative final int sendBufferSize) {
 			common.setSendBufferSize(sendBufferSize);
 			return this;
 		}
 
 		@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
-		public TCPServerChannelBuilder setReceiveBufferSize(final int receiveBufferSize) {
+		public TCPServerChannelBuilder setReceiveBufferSize(@Nonnegative final int receiveBufferSize) {
 			common.setReceiveBufferSize(receiveBufferSize);
 			return this;
 		}
@@ -150,7 +156,7 @@ public final class MessageServerChannels {
 
 		@Mandatory(restrictions = "length > 0")
 		@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codecs)")
-		public TCPServerChannelBuilder setMessageLength(final int length) {
+		public TCPServerChannelBuilder setMessageLength(@Nonnegative final int length) {
 			server.setMessageLength(length);
 			return this;
 		}
@@ -164,7 +170,7 @@ public final class MessageServerChannels {
 
 		@Mandatory(restrictions = "value >= 1 && unit != null")
 		@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiters)")
-		public TCPServerChannelBuilder setRateLimit(final long value, final BinaryUnit unit) {
+		public TCPServerChannelBuilder setRateLimit(@Nonnegative final long value, final BinaryUnit unit) {
 			server.setRateLimit(value, unit);
 			return this;
 		}

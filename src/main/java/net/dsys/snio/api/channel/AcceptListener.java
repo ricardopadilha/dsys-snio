@@ -18,6 +18,8 @@ package net.dsys.snio.api.channel;
 
 import java.net.SocketAddress;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -27,6 +29,6 @@ public interface AcceptListener<E> {
 	 * Called when a {@link MessageServerChannel} accepted a new connection.
 	 * @param channel the newly accepted channel to the client
 	 */
-	void connectionAccepted(SocketAddress remote, MessageChannel<E> channel);
+	void connectionAccepted(@Nonnull SocketAddress remote, @Nonnull MessageChannel<E> channel);
 
 }

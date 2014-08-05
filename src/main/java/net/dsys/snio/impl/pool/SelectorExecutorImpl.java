@@ -23,6 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.impl.future.MergingCallbackFuture;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.commons.impl.lang.DaemonThreadFactory;
@@ -45,7 +47,7 @@ final class SelectorExecutorImpl implements SelectorExecutor {
 	private volatile boolean accepting;
 	private MergingCallbackFuture<Void> closeFuture;
 
-	SelectorExecutorImpl(final String name) {
+	SelectorExecutorImpl(@Nonnull final String name) {
 		this.executor = Executors.newFixedThreadPool(THREAD_COUNT, new DaemonThreadFactory(name));
 		this.accepter = new SelectorThreadImpl(SelectionType.OP_ACCEPT);
 		this.reader = new SelectorThreadImpl(SelectionType.OP_READ);

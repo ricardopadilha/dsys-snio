@@ -18,6 +18,8 @@ package net.dsys.snio.impl.codec;
 
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnegative;
+
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
 import net.dsys.snio.api.codec.MessageCodec;
@@ -49,7 +51,7 @@ public final class IntHeaderCodec implements MessageCodec {
 		this(MAX_BODY_LENGTH);
 	}
 
-	IntHeaderCodec(final int bodyLength) {
+	IntHeaderCodec(@Nonnegative final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
 			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0x7FFF_FFFB: " + bodyLength);
 		}

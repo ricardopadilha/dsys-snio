@@ -30,6 +30,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLSession;
@@ -64,9 +66,10 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	private volatile boolean closedInternally;
 	private volatile boolean closed;
 
-	SSLProcessor(final MessageCodec codec, final RateLimiter limiter,
-			final MessageBufferProvider<ByteBuffer> provider,
-			final int sendBufferSize, final int receiveBufferSize, final SSLEngine engine) {
+	SSLProcessor(@Nonnull final MessageCodec codec, @Nonnull final RateLimiter limiter,
+			@Nonnull final MessageBufferProvider<ByteBuffer> provider,
+			@Nonnegative final int sendBufferSize, @Nonnegative final int receiveBufferSize,
+			@Nonnull final SSLEngine engine) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");

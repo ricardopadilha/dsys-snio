@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.channel;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -26,6 +28,6 @@ public interface CloseListener<E> {
 	 * 
 	 * @param channel the closed channel
 	 */
-	void connectionClosed(MessageChannel<E> channel);
+	void connectionClosed(@Nonnull MessageChannel<E> channel);
 
 }

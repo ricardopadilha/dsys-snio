@@ -26,6 +26,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.lang.Cleaner;
 import net.dsys.commons.api.lang.Copier;
@@ -56,25 +60,33 @@ public final class MessageHandlers {
 		return;
 	}
 
-	public static <T> Interruptible syncConsumer(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
+	@Nonnull
+	public static <T> Interruptible syncConsumer(@Nonnull final MessageBufferConsumer<T> in,
+			@Nonnull final MessageConsumer<T> consumer) {
 		return new ConsumerThread<>(in, consumer);
 	}
 
-	public static <T> Interruptible asyncConsumer(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer,
-			final T holder, final Copier<T> copier, final Cleaner<T> cleaner) {
+	@Nonnull
+	public static <T> Interruptible asyncConsumer(@Nonnull final MessageBufferConsumer<T> in,
+			@Nonnull final MessageConsumer<T> consumer,
+			@Nonnull final T holder, @Nonnull final Copier<T> copier, @Nonnull final Cleaner<T> cleaner) {
 		return new ConsumerThread<>(in, consumer, holder, copier, cleaner);
 	}
 
-	public static <T> Interruptible syncProducer(final MessageBufferProducer<T> out,
-			final MessageProducer<T> producer) {
+	@Nonnull
+	public static <T> Interruptible syncProducer(@Nonnull final MessageBufferProducer<T> out,
+			@Nonnull final MessageProducer<T> producer) {
 		return new ProducerThread<>(out, producer);
 	}
 
-	public static <T> Interruptible asyncProducer(final MessageBufferProducer<T> out,
-			final MessageProducer<T> producer, final T holder, final Copier<T> copier, final Cleaner<T> cleaner) {
+	@Nonnull
+	public static <T> Interruptible asyncProducer(@Nonnull final MessageBufferProducer<T> out,
+			@Nonnull final MessageProducer<T> producer,
+			@Nonnull final T holder, @Nonnull final Copier<T> copier, @Nonnull final Cleaner<T> cleaner) {
 		return new ProducerThread<>(out, producer, holder, copier, cleaner);
 	}
 
+	@Nonnull
 	public static HandlerBuilder buildHandler() {
 		return new HandlerBuilder();
 	}
@@ -82,6 +94,7 @@ public final class MessageHandlers {
 	/**
 	 * @author Ricardo Padilha
 	 */
+	@ParametersAreNonnullByDefault
 	public static final class HandlerBuilder {
 
 		private static AtomicInteger counter = new AtomicInteger();
@@ -162,7 +175,7 @@ public final class MessageHandlers {
 
 		@Optional(defaultValue = "useZeroCopyProcessing()", restrictions = "messageLength > 0")
 		@OptionGroup(name = "execution", seeAlso = "useZeroCopyProcessing()")
-		public HandlerBuilder useDecoupledProcessing(final int messageLength) {
+		public HandlerBuilder useDecoupledProcessing(@Nonnegative final int messageLength) {
 			this.threadType = DECOUPLED;
 			this.length = messageLength;
 			return this;

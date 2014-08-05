@@ -18,6 +18,8 @@ package net.dsys.snio.impl.codec;
 
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnegative;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
@@ -59,7 +61,7 @@ final class LZ4CompressionCodec implements MessageCodec {
 	private final byte[] decompressInput;
 	private final byte[] decompressOutput;
 
-	LZ4CompressionCodec(final int bodyLength) {
+	LZ4CompressionCodec(@Nonnegative final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
 			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > 0xFEEC: " + bodyLength);
 		}

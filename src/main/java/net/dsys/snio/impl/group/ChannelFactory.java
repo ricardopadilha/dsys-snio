@@ -18,6 +18,8 @@ package net.dsys.snio.impl.group;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.channel.MessageChannel;
 
 /**
@@ -25,6 +27,7 @@ import net.dsys.snio.api.channel.MessageChannel;
  */
 interface ChannelFactory<T> {
 
+	@Nonnull
 	MessageChannel<T> open() throws IOException;
 
 }

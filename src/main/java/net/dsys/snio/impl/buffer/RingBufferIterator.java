@@ -17,6 +17,9 @@
 package net.dsys.snio.impl.buffer;
 
 
+import javax.annotation.Nonnull;
+import javax.annotation.meta.When;
+
 import net.dsys.snio.api.buffer.InterruptedByClose;
 
 import com.lmax.disruptor.AlertException;
@@ -60,7 +63,7 @@ import com.lmax.disruptor.TimeoutException;
  * 
  * @author Ricardo Padilha
  */
-public final class RingBufferIterator<E> {
+final class RingBufferIterator<E> {
 
 	private final RingBuffer<E> buffer;
 	private final Sequence[] leading;
@@ -77,7 +80,8 @@ public final class RingBufferIterator<E> {
 	 * @param buffer
 	 * @param leading
 	 */
-	private RingBufferIterator(final RingBuffer<E> buffer, final Sequence... leading) {
+	private RingBufferIterator(@Nonnull final RingBuffer<E> buffer,
+			@Nonnull(when = When.MAYBE) final Sequence... leading) {
 		if (buffer == null) {
 			throw new NullPointerException("buffer == null");
 		}
@@ -91,7 +95,7 @@ public final class RingBufferIterator<E> {
 	 * 
 	 * @param buffer
 	 */
-	public RingBufferIterator(final RingBuffer<E> buffer) {
+	RingBufferIterator(@Nonnull final RingBuffer<E> buffer) {
 		this(buffer, (Sequence[]) null);
 	}
 
@@ -102,7 +106,7 @@ public final class RingBufferIterator<E> {
 	 * @param leaders
 	 */
 	@SafeVarargs
-	public RingBufferIterator(final RingBufferIterator<E>... leaders) {
+	RingBufferIterator(@Nonnull final RingBufferIterator<E>... leaders) {
 		if (leaders == null) {
 			throw new NullPointerException("leaders == null");
 		}
@@ -162,22 +166,24 @@ public final class RingBufferIterator<E> {
 	 * Creates a new iterator that will follow the same barrier as this one.
 	 * The new iterator will be able to process the same events as this one, in parallel.
 	 */
+	@Nonnull
 	public RingBufferIterator<E> createPeer() {
 		if (!isOpen()) {
 			throw new IllegalStateException("iterator must be opened before creating a peer");
 		}
-		return new RingBufferIterator<>(this.buffer, this.leading);
+		return new RingBufferIterator<>(buffer, leading);
 	}
 
 	/**
 	 * Creates a new iterator that will follow this iterator.
 	 * The new iterator will only be able to process new events once this one advances.
 	 */
+	@Nonnull
 	public RingBufferIterator<E> createFollower() {
 		if (!isOpen()) {
 			throw new IllegalStateException("iterator must be opened before creating a follower");
 		}
-		return new RingBufferIterator<>(this.buffer, this.sequence);
+		return new RingBufferIterator<>(buffer, sequence);
 	}
 
 	/**
@@ -223,6 +229,7 @@ public final class RingBufferIterator<E> {
 	/**
 	 * @return the element at this iterator's current sequence.
 	 */
+	@Nonnull
 	public E get() {
 		return buffer.get(cursor);
 	}

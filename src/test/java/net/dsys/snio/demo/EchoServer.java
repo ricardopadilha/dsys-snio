@@ -74,13 +74,10 @@ public final class EchoServer implements MessageConsumer<ByteBuffer> {
 		n++;
 		// prepare reply
 		final MessageBufferProducer<ByteBuffer> out;
-		final Object attach;
 		if (this.out == null) {
 			out = (MessageBufferProducer<ByteBuffer>) attachment;
-			attach = null;
 		} else {
 			out = this.out;
-			attach = attachment;
 		}
 		// send reply
 		try {
@@ -90,7 +87,7 @@ public final class EchoServer implements MessageConsumer<ByteBuffer> {
 				final ByteBuffer msg = out.get(seqOut);
 				msg.clear();
 				msg.putInt(0, i);
-				out.attach(seqOut, attach);
+				out.attach(seqOut, attachment);
 			} finally {
 				out.release(seqOut);
 			}

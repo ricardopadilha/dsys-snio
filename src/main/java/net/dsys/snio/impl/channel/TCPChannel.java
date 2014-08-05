@@ -24,6 +24,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
@@ -44,13 +46,41 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 	private CloseListener<T> close;
 	private SocketChannel channel;
 
-	TCPChannel(final SelectorExecutor selector, final KeyProcessor<T> processor, final SocketChannel channel,
-			final CloseListener<T> onClose) {
+	/**
+	 * Used to create client-side (i.e., "connect") channels.
+	 */
+	TCPChannel(@Nonnull final SelectorExecutor selector,
+			@Nonnull final KeyProcessor<T> processor) {
 		if (selector == null) {
 			throw new NullPointerException("selector == null");
 		}
 		if (processor == null) {
 			throw new NullPointerException("processor == null");
+		}
+		this.selector = selector;
+		this.processor = processor;
+		this.channel = null;
+		this.close = null;
+	}
+
+	/**
+	 * Used to create server-side (i.e., "accept") channels.
+	 */
+	TCPChannel(@Nonnull final SelectorExecutor selector,
+			@Nonnull final KeyProcessor<T> processor,
+			@Nonnull final SocketChannel channel,
+			@Nonnull final CloseListener<T> onClose) {
+		if (selector == null) {
+			throw new NullPointerException("selector == null");
+		}
+		if (processor == null) {
+			throw new NullPointerException("processor == null");
+		}
+		if (channel == null) {
+			throw new NullPointerException("channel == null");
+		}
+		if (onClose == null) {
+			throw new NullPointerException("onClose == null");
 		}
 		this.selector = selector;
 		this.processor = processor;

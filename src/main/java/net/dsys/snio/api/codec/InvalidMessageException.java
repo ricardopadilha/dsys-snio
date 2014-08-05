@@ -24,7 +24,7 @@ import java.io.IOException;
  * 
  * @author Ricardo Padilha
  */
-public class InvalidMessageException extends IOException {
+public final class InvalidMessageException extends IOException {
 
 	private static final long serialVersionUID = 1L;
 

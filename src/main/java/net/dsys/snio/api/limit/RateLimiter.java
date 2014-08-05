@@ -16,6 +16,9 @@
 
 package net.dsys.snio.api.limit;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.BinaryUnit;
 
 /**
@@ -23,10 +26,10 @@ import net.dsys.commons.api.lang.BinaryUnit;
  */
 public interface RateLimiter {
 
-	void setRate(long value, BinaryUnit unit);
+	void setRate(@Nonnegative long value, @Nonnull BinaryUnit unit);
 
-	void send(long bytes);
+	void send(@Nonnegative long bytes);
 
-	void receive(long bytes);
+	void receive(@Nonnegative long bytes);
 
 }

@@ -16,11 +16,14 @@
 
 package net.dsys.snio.api.pool;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
 public interface SelectorPolicy {
 
-	SelectorExecutor allocate(SelectorPool pool);
+	@Nonnull
+	SelectorExecutor allocate(@Nonnull SelectorPool pool);
 
 }

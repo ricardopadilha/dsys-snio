@@ -19,6 +19,8 @@ package net.dsys.snio.impl.codec;
 import java.nio.ByteBuffer;
 import java.util.zip.Checksum;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidMessageException;
 import net.dsys.snio.api.codec.MessageCodec;
@@ -47,7 +49,9 @@ final class ChecksumCodec implements MessageCodec {
 	private final byte[] encoderArray;
 	private final byte[] decoderArray;
 
-	ChecksumCodec(final MessageCodec codec, final Checksum encoder, final Checksum decoder) {
+	ChecksumCodec(@Nonnull final MessageCodec codec,
+			@Nonnull final Checksum encoder,
+			@Nonnull final Checksum decoder) {
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
 		}

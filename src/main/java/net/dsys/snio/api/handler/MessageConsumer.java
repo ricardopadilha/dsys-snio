@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.handler;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -24,6 +26,6 @@ public interface MessageConsumer<T> {
 	/**
 	 * @param message to be processed
 	 */
-	void consume(T message, Object attachment);
+	void consume(@Nonnull T message, @Nonnull Object attachment);
 
 }

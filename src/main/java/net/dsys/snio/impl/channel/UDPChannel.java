@@ -26,6 +26,8 @@ import java.nio.channels.NetworkChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -46,7 +48,7 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 	private CloseListener<T> close;
 	private DatagramChannel channel;
 
-	UDPChannel(final SelectorPool pool, final KeyProcessor<T> processor) {
+	UDPChannel(@Nonnull final SelectorPool pool, @Nonnull final KeyProcessor<T> processor) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}

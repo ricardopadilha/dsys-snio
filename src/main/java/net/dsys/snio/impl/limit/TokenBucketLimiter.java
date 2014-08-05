@@ -18,6 +18,9 @@ package net.dsys.snio.impl.limit;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.snio.api.limit.RateLimiter;
 
@@ -42,11 +45,11 @@ final class TokenBucketLimiter implements RateLimiter {
 	private TokenBucket send;
 	private TokenBucket recv;
 
-	TokenBucketLimiter(final long value, final BinaryUnit unit) {
+	TokenBucketLimiter(@Nonnegative final long value, @Nonnull final BinaryUnit unit) {
 		setRate(value, unit);
 	}
 
-	private static TokenBucket createBucket(final long bits) {
+	private static TokenBucket createBucket(@Nonnegative final long bits) {
 		// Instead of refilling once per second, we refill 10 times per second.
 		// It makes for a smoother bandwidth curve under very low rates,
 		// e.g., less than 100 kbps.

@@ -18,6 +18,9 @@ package net.dsys.snio.impl.pool;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.pool.SelectorPolicy;
 import net.dsys.snio.api.pool.SelectorPool;
 
@@ -31,16 +34,20 @@ public final class SelectorPools {
 		return;
 	}
 
-	public static SelectorPool open(final String name) throws IOException {
+	@Nonnull
+	public static SelectorPool open(@Nonnull final String name) throws IOException {
 		final int size = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 		return open(name, size, new RoundRobinPolicy());
 	}
 
-	public static SelectorPool open(final String name, final int size) throws IOException {
+	@Nonnull
+	public static SelectorPool open(@Nonnull final String name, @Nonnegative final int size) throws IOException {
 		return open(name, size, new RoundRobinPolicy());
 	}
 
-	public static SelectorPool open(final String name, final int size, final SelectorPolicy policy) throws IOException {
+	@Nonnull
+	public static SelectorPool open(@Nonnull final String name, @Nonnegative final int size,
+			@Nonnull final SelectorPolicy policy) throws IOException {
 		final SelectorPoolImpl pool = new SelectorPoolImpl(name, size, policy);
 		pool.open();
 		return pool;

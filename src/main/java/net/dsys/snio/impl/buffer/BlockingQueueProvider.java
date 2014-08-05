@@ -16,6 +16,9 @@
 
 package net.dsys.snio.impl.buffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -37,7 +40,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	private final MessageBufferConsumer<T> appIn; // app consumer
 	private final boolean internalConsumer;
 
-	public BlockingQueueProvider(final int capacity, final Factory<T> factory) {
+	public BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 		this.out = new BlockingBuffer<>(capacity);
 		this.in = new BlockingBuffer<>(capacity);
 		this.appOut = new BlockingQueueProducer<>(out, factory);
@@ -47,8 +50,8 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 		this.internalConsumer = true;
 	}
 
-	public BlockingQueueProvider(final int capacity, final Factory<T> factory,
-			final MessageBufferConsumer<T> consumer) {
+	public BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+			@Nonnull final MessageBufferConsumer<T> consumer) {
 		if (consumer == null) {
 			throw new NullPointerException("appIn == null");
 		}
@@ -128,7 +131,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 		private final Factory<T> factory;
 		private final MessageBufferConsumer<T> consumer;
 
-		ProviderFactory(final int capacity, final Factory<T> factory) {
+		ProviderFactory(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 			if (capacity < 1) {
 				throw new IllegalArgumentException("capacity < 1");
 			}
@@ -140,7 +143,8 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 			this.consumer = null;
 		}
 
-		ProviderFactory(final int capacity, final Factory<T> factory, final MessageBufferConsumer<T> consumer) {
+		ProviderFactory(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+				@Nonnull final MessageBufferConsumer<T> consumer) {
 			if (capacity < 1) {
 				throw new IllegalArgumentException("capacity < 1");
 			}

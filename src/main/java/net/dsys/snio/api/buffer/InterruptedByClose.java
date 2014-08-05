@@ -15,6 +15,8 @@
  */
 package net.dsys.snio.api.buffer;
 
+import javax.annotation.Nonnull;
+
 /**
  * Thread has been interrupted due to a close() operation.
  * 
@@ -28,7 +30,7 @@ public final class InterruptedByClose extends InterruptedException {
 		super();
 	}
 
-	public InterruptedByClose(final String message) {
+	public InterruptedByClose(@Nonnull final String message) {
 		super(message);
 	}
 

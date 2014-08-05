@@ -16,6 +16,9 @@
 
 package net.dsys.snio.api.buffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -38,13 +41,14 @@ public interface MessageBuffer<E> {
 	 * @return the last sequence number to be used later on
 	 *         {@link #release(long, long)}
 	 */
-	long acquire(int n) throws InterruptedException;
+	long acquire(@Nonnegative int n) throws InterruptedException;
 
 	/**
 	 * Returns an estimate of the remaining items in this buffer.
 	 * 
 	 * @return the number of items available for processing
 	 */
+	@Nonnegative
 	int remaining();
 
 	/**
@@ -55,6 +59,7 @@ public interface MessageBuffer<E> {
 	 *            {@link #acquire(int)}
 	 * @return the buffer element at the given sequence number
 	 */
+	@Nonnull
 	E get(long sequence);
 
 	/**

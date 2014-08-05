@@ -18,6 +18,8 @@ package net.dsys.snio.api.handler;
 
 import java.net.SocketAddress;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.channel.MessageChannel;
 
 /**
@@ -25,6 +27,7 @@ import net.dsys.snio.api.channel.MessageChannel;
  */
 public interface MessageConsumerFactory<T> {
 
-	MessageConsumer<T> newInstance(SocketAddress remote, MessageChannel<T> channel);
+	@Nonnull
+	MessageConsumer<T> newInstance(@Nonnull SocketAddress remote, @Nonnull MessageChannel<T> channel);
 
 }

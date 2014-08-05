@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.buffer;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.pool.KeyProcessor;
 
 /**
@@ -23,14 +25,43 @@ import net.dsys.snio.api.pool.KeyProcessor;
  */
 public interface MessageBufferProvider<T> {
 
-	MessageBufferProducer<T> getAppOutput(KeyProcessor<T> processor);
+	/**
+	 * Returns the message buffer that the application uses to send messages.
+	 * 
+	 * @param processor
+	 *            the processor that will be notified when a new message is
+	 *            sent.
+	 * @see #getChannelInput()
+	 */
+	@Nonnull
+	MessageBufferProducer<T> getAppOutput(@Nonnull KeyProcessor<T> processor);
 
+	/**
+	 * @return the message channel where the underlying channel will read from,
+	 *         i.e., the messages to be sent.
+	 * @see #getAppOutput(KeyProcessor)
+	 */
+	@Nonnull
 	MessageBufferConsumer<T> getChannelInput();
 
+	/**
+	 * @return the message channel where messages coming from the network
+	 *         channel will be published.
+	 * @see #getAppInput()
+	 */
+	@Nonnull
 	MessageBufferProducer<T> getChannelOutput();
 
+	/**
+	 * @return the message channel with which the application receives messages.
+	 * @see MessageBufferProvider#getChannelOutput()
+	 */
+	@Nonnull
 	MessageBufferConsumer<T> getAppInput();
 
+	/**
+	 * Closes all message channels related to this provider.
+	 */
 	void close();
 
 }

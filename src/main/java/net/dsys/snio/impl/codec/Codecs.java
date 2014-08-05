@@ -19,6 +19,9 @@ package net.dsys.snio.impl.codec;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.codec.MessageCodec;
 
@@ -39,10 +42,12 @@ public final class Codecs {
 	 * 
 	 * @return a codec configured for its maximum supported body length
 	 */
+	@Nonnull
 	public static MessageCodec getShort() {
 		return new ShortHeaderCodec();
 	}
 
+	@Nonnull
 	public static Factory<MessageCodec> getShortFactory() {
 		return new Factory<MessageCodec>() {
 			@Override
@@ -63,11 +68,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getShort(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getShort(@Nonnegative final int bodyLength) {
 		return new ShortHeaderCodec(bodyLength);
 	}
 
-	public static Factory<MessageCodec> getShortFactory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getShortFactory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -87,11 +94,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getDefault(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getDefault(@Nonnegative final int bodyLength) {
 		return new IntHeaderCodec(bodyLength);
 	}
 
-	public static Factory<MessageCodec> getDefaultFactory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getDefaultFactory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -113,11 +122,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getCRC32Checksum(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getCRC32Checksum(@Nonnegative final int bodyLength) {
 		return new ChecksumCodec(getDefault(bodyLength), new CRC32(), new CRC32());
 	}
 
-	public static Factory<MessageCodec> getCRC32Factory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getCRC32Factory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -139,11 +150,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getAdler32Checksum(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getAdler32Checksum(@Nonnegative final int bodyLength) {
 		return new ChecksumCodec(getDefault(bodyLength), new Adler32(), new Adler32());
 	}
 
-	public static Factory<MessageCodec> getAdler32Factory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getAdler32Factory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -165,11 +178,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getXXHashChecksum(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getXXHashChecksum(@Nonnegative final int bodyLength) {
 		return new ChecksumCodec(getDefault(bodyLength), new XXHashChecksum(), new XXHashChecksum());
 	}
 
-	public static Factory<MessageCodec> getXXHashFactory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getXXHashFactory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -191,11 +206,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getDeflateCompression(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getDeflateCompression(@Nonnegative final int bodyLength) {
 		return new DeflateCodec(bodyLength);
 	}
 
-	public static Factory<MessageCodec> getDeflateFactory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getDeflateFactory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {
@@ -217,11 +234,13 @@ public final class Codecs {
 	 * @throws IllegalArgumentException
 	 *             if the body length is too small or too large
 	 */
-	public static MessageCodec getLZ4Compression(final int bodyLength) {
+	@Nonnull
+	public static MessageCodec getLZ4Compression(@Nonnegative final int bodyLength) {
 		return new LZ4CompressionCodec(bodyLength);
 	}
 
-	public static Factory<MessageCodec> getLZ4Factory(final int bodyLength) {
+	@Nonnull
+	public static Factory<MessageCodec> getLZ4Factory(@Nonnegative final int bodyLength) {
 		return new Factory<MessageCodec>() {
 			@Override
 			public MessageCodec newInstance() {

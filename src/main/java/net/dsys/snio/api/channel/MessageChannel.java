@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.channel;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.io.AsyncChannel;
@@ -28,16 +30,19 @@ public interface MessageChannel<T> extends AsyncChannel {
 	/**
 	 * @return the buffer to send and receive messages
 	 */
+	@Nonnull
 	MessageBufferConsumer<T> getInputBuffer();
 
 	/**
 	 * @return the buffer to send and receive messages
 	 */
+	@Nonnull
 	MessageBufferProducer<T> getOutputBuffer();
 
 	/**
 	 * Provide an action to be performed when a connection is closed.
 	 */
-	MessageChannel<T> onClose(CloseListener<T> listener);
+	@Nonnull
+	MessageChannel<T> onClose(@Nonnull CloseListener<T> listener);
 
 }

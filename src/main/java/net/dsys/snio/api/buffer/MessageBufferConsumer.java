@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.buffer;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -29,10 +31,13 @@ public interface MessageBufferConsumer<T> extends MessageBuffer<T> {
 	 *            {@link #acquire(int)}
 	 * @return the attached object
 	 */
+	@Nonnull
 	Object attachment(long sequence);
 
 	/**
 	 * @return a new producer for this consumer.
 	 */
+	@Nonnull
 	MessageBufferProducer<T> createProducer();
+
 }

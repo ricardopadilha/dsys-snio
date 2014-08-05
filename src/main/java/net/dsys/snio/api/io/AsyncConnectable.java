@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 
 /**
@@ -40,13 +42,14 @@ public interface AsyncConnectable {
 	 * @return a future that can be used to synchronize calls until the channel
 	 *         is connected.
 	 */
-	void connect(SocketAddress remote) throws IOException;
+	void connect(@Nonnull SocketAddress remote) throws IOException;
 
 	/**
 	 * @return a {@link Future} that is done when this channel is connected. Any
 	 *         exceptions raised during the connection is returned by this
 	 *         future.
 	 */
+	@Nonnull
 	CallbackFuture<Void> getConnectFuture();
 
 }

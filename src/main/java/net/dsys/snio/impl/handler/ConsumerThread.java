@@ -21,6 +21,8 @@ import static net.dsys.snio.impl.handler.ExecutionType.ZERO_COPY;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.lang.Cleaner;
 import net.dsys.commons.api.lang.Copier;
@@ -48,8 +50,9 @@ final class ConsumerThread<T> implements Interruptible {
 	private final Cleaner<T> cleaner;
 	private final AtomicBoolean interrupted;
 
-	ConsumerThread(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer, final T holder,
-			final Copier<T> copier, final Cleaner<T> cleaner) {
+	ConsumerThread(@Nonnull final MessageBufferConsumer<T> in,
+			@Nonnull final MessageConsumer<T> consumer, @Nonnull final T holder,
+			@Nonnull final Copier<T> copier, @Nonnull final Cleaner<T> cleaner) {
 		if (in == null) {
 			throw new NullPointerException("in == null");
 		}
@@ -74,7 +77,7 @@ final class ConsumerThread<T> implements Interruptible {
 		this.interrupted = new AtomicBoolean();
 	}
 
-	ConsumerThread(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {
+	ConsumerThread(@Nonnull final MessageBufferConsumer<T> in, @Nonnull final MessageConsumer<T> consumer) {
 		if (in == null) {
 			throw new NullPointerException("in == null");
 		}
@@ -90,8 +93,8 @@ final class ConsumerThread<T> implements Interruptible {
 		this.interrupted = new AtomicBoolean();
 	}
 
-	static <T> ConsumerThreadFactory<T> createAsyncFactory(final Factory<T> factory, final Copier<T> copier,
-			final Cleaner<T> cleaner) {
+	static <T> ConsumerThreadFactory<T> createAsyncFactory(@Nonnull final Factory<T> factory,
+			@Nonnull final Copier<T> copier, @Nonnull final Cleaner<T> cleaner) {
 		return new ConsumerThreadFactory<T>() {
 			@Override
 			public Runnable newInstance(final MessageBufferConsumer<T> in, final MessageConsumer<T> consumer) {

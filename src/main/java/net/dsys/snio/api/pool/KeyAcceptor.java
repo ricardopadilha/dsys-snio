@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
@@ -29,22 +31,24 @@ import net.dsys.snio.api.channel.CloseListener;
  */
 public interface KeyAcceptor<T> {
 
-	void onAccept(AcceptListener<T> listener);
+	void onAccept(@Nonnull AcceptListener<T> listener);
 
-	void onClose(CloseListener<T> listener);
+	void onClose(@Nonnull CloseListener<T> listener);
 
+	@Nonnull
 	CallbackFuture<Void> getBindFuture();
 
-	void registered(SelectorThread thread, SelectionKey key);
+	void registered(@Nonnull SelectorThread thread, @Nonnull SelectionKey key);
 
-	void accept(SelectionKey key) throws IOException;
+	void accept(@Nonnull SelectionKey key) throws IOException;
 
 	/**
 	 * Close this processor properly, i.e.,
 	 * cancel from within the selector threads.
 	 */
-	void close(SelectorExecutor executor, Callable<Void> closeTask);
+	void close(@Nonnull SelectorExecutor executor, @Nonnull Callable<Void> closeTask);
 
+	@Nonnull
 	CallbackFuture<Void> getCloseFuture();
 
 }

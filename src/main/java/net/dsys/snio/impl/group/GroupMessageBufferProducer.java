@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.group.GroupData;
@@ -35,15 +37,16 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 	private final MessageBufferProducer<T>[] buffers;
 	private long last;
 
-	GroupMessageBufferProducer(final Copier<T> copier, final Collection<MessageBufferProducer<T>> buffers) {
+	GroupMessageBufferProducer(@Nonnull final Copier<T> copier,
+			@Nonnull final Collection<MessageBufferProducer<T>> buffers) {
 		if (copier == null) {
 			throw new NullPointerException("copier == null");
 		}
 		if (buffers == null) {
 			throw new NullPointerException("buffers == null");
 		}
-		if (buffers.size() == 0) {
-			throw new IllegalArgumentException("buffers.length == 0");
+		if (buffers.isEmpty()) {
+			throw new IllegalArgumentException("buffers.isEmpty()");
 		}
 		this.copier = copier;
 		@SuppressWarnings("unchecked")
@@ -148,14 +151,15 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 		last = sequence;
 	}
 
-	public static <T> Builder<T> build() {
+	@Nonnull
+	static <T> Builder<T> build() {
 		return new Builder<>();
 	}
 
 	/**
 	 * @author Ricardo Padilha
 	 */
-	public static final class Builder<T> {
+	static final class Builder<T> {
 
 		private final List<MessageBufferProducer<T>> list;
 		private Copier<T> copier;
@@ -165,14 +169,14 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 			this.copier = null;
 		}
 
-		public void setCopier(final Copier<T> copier) {
+		public void setCopier(@Nonnull final Copier<T> copier) {
 			if (copier == null) {
 				throw new NullPointerException("copier == null");
 			}
 			this.copier = copier;
 		}
 
-		public Builder<T> add(final MessageBufferProducer<T> producer) {
+		public Builder<T> add(@Nonnull final MessageBufferProducer<T> producer) {
 			if (producer == null) {
 				throw new NullPointerException("producer == null");
 			}
@@ -180,6 +184,7 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 			return this;
 		}
 
+		@Nonnull
 		public GroupMessageBufferProducer<T> build() {
 			return new GroupMessageBufferProducer<>(copier, list);
 		}

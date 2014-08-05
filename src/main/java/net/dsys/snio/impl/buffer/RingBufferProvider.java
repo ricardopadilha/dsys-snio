@@ -16,6 +16,9 @@
 
 package net.dsys.snio.impl.buffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -44,7 +47,7 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 	private final MessageBufferConsumer<T> appIn; // app consumer
 	private final boolean internalConsumer;
 
-	public RingBufferProvider(final int capacity, final Factory<T> factory) {
+	public RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 		this.waitOut = new WakeupWaitStrategy();
 		this.waitIn = new BlockingWaitStrategy();
 		final EventFactory<T> evfactory = wrapFactory(factory);
@@ -59,7 +62,8 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		this.internalConsumer = true;
 	}
 
-	public RingBufferProvider(final int capacity, final Factory<T> factory, final MessageBufferConsumer<T> appIn) {
+	public RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+			@Nonnull final MessageBufferConsumer<T> appIn) {
 		if (appIn == null) {
 			throw new NullPointerException("appIn == null");
 		}
@@ -126,7 +130,7 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 	/**
 	 * Convert a {@link Factory} into an {@link EventFactory}
 	 */
-	private static <T> EventFactory<T> wrapFactory(final Factory<T> factory) {
+	private static <T> EventFactory<T> wrapFactory(@Nonnull final Factory<T> factory) {
 		if (factory == null) {
 			throw new NullPointerException("factory == null");
 		}
@@ -138,7 +142,8 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		};
 	}
 
-	public static <T> RingBufferConsumer<T> createConsumer(final int capacity, final Factory<T> factory) {
+	public static <T> RingBufferConsumer<T> createConsumer(@Nonnegative final int capacity,
+			@Nonnull final Factory<T> factory) {
 		final EventFactory<T> evfactory = wrapFactory(factory);
 		final RingBuffer<T> buffer = RingBuffer.createMultiProducer(evfactory, capacity);
 		final Object[] attachments = new Object[capacity];
@@ -146,12 +151,13 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		return consumer;
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(final int capacity, final Factory<T> factory) {
+	public static <T> Factory<MessageBufferProvider<T>> createFactory(@Nonnegative final int capacity,
+			@Nonnull final Factory<T> factory) {
 		return new ProviderFactory<>(capacity, factory);
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(final int capacity, final Factory<T> factory,
-			final MessageBufferConsumer<T> consumer) {
+	public static <T> Factory<MessageBufferProvider<T>> createFactory(@Nonnegative final int capacity,
+			@Nonnull final Factory<T> factory, @Nonnull final MessageBufferConsumer<T> consumer) {
 		return new ProviderFactory<>(capacity, factory, consumer);
 	}
 
@@ -161,7 +167,7 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		private final Factory<T> factory;
 		private final MessageBufferConsumer<T> consumer;
 
-		ProviderFactory(final int capacity, final Factory<T> factory) {
+		ProviderFactory(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 			if (capacity < 1) {
 				throw new IllegalArgumentException("capacity < 1");
 			}
@@ -173,7 +179,8 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 			this.consumer = null;
 		}
 
-		ProviderFactory(final int capacity, final Factory<T> factory, final MessageBufferConsumer<T> consumer) {
+		ProviderFactory(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+				@Nonnull final MessageBufferConsumer<T> consumer) {
 			if (capacity < 1) {
 				throw new IllegalArgumentException("capacity < 1");
 			}

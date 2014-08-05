@@ -21,6 +21,8 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import javax.annotation.Nonnegative;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.codec.InvalidEncodingException;
 import net.dsys.snio.api.codec.InvalidLengthException;
@@ -61,7 +63,7 @@ final class DeflateCodec implements MessageCodec {
 	private final byte[] inflaterInput;
 	private final byte[] inflaterOutput;
 
-	DeflateCodec(final int bodyLength) {
+	DeflateCodec(@Nonnegative final int bodyLength) {
 		if (bodyLength < 1 || bodyLength > MAX_BODY_LENGTH) {
 			throw new IllegalArgumentException("bodyLength < 1 || bodyLength > MAX_BODY_LENGTH: " + bodyLength);
 		}

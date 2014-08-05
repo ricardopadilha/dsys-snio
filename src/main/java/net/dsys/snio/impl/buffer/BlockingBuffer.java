@@ -20,6 +20,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 /**
  * Behaves like an ArrayBlockingQueue, but both {@link #put(Object)} and
  * {@link #take()} can be interrupted. Loosely follows the contract of
@@ -50,7 +53,7 @@ final class BlockingBuffer<T> {
 	 * @throws IllegalArgumentException
 	 *             if {@code capacity < 1}
 	 */
-	BlockingBuffer(final int capacity) {
+	BlockingBuffer(@Nonnegative final int capacity) {
 		this(capacity, false);
 	}
 
@@ -67,7 +70,7 @@ final class BlockingBuffer<T> {
 	 * @throws IllegalArgumentException
 	 *             if {@code capacity < 1}
 	 */
-	BlockingBuffer(final int capacity, final boolean fair) {
+	BlockingBuffer(@Nonnegative final int capacity, final boolean fair) {
 		if (capacity < 1) {
 			throw new IllegalArgumentException("capacity < 1");
 		}
@@ -87,7 +90,7 @@ final class BlockingBuffer<T> {
 	/**
 	 * @see BlockingQueue#put(Object)
 	 */
-	public void put(final Tuple<T> value) throws InterruptedException {
+	void put(@Nonnull final Tuple<T> value) throws InterruptedException {
 		if (value == null || value.getValue() == null) {
 			throw new NullPointerException("value == null");
 		}
@@ -116,7 +119,7 @@ final class BlockingBuffer<T> {
 	 * Interrupt threads blocked in {@link #put(Object)} or
 	 * {@link #put(Object, long, TimeUnit)} and throws the given exception.
 	 */
-	public void interruptPut(final InterruptedException e) {
+	void interruptPut(@Nonnull final InterruptedException e) {
 		if (e == null) {
 			throw new NullPointerException("e == null");
 		}
@@ -132,7 +135,8 @@ final class BlockingBuffer<T> {
 	/**
 	 * @see BlockingQueue#take()
 	 */
-	public Tuple<T> take() throws InterruptedException {
+	@Nonnull
+	Tuple<T> take() throws InterruptedException {
 		lock.lockInterruptibly();
 		try {
 			while (count == 0 && interruptTake == null) {
@@ -160,7 +164,7 @@ final class BlockingBuffer<T> {
 	 * Interrupt threads blocked in {@link #take()} or
 	 * {@link #poll(long, TimeUnit)} and throws the given exception.
 	 */
-	public void interruptTake(final InterruptedException e) {
+	void interruptTake(@Nonnull final InterruptedException e) {
 		if (e == null) {
 			throw new NullPointerException("e == null");
 		}
@@ -176,14 +180,16 @@ final class BlockingBuffer<T> {
 	/**
 	 * @return the capacity of this buffer
 	 */
-	public int capacity() {
+	@Nonnegative
+	int capacity() {
 		return values.length;
 	}
 
 	/**
 	 * @return the number of elements in this buffer
 	 */
-	public int size() {
+	@Nonnegative
+	int size() {
 		lock.lock();
 		try {
 			return count;
@@ -196,14 +202,15 @@ final class BlockingBuffer<T> {
 	 * @return {@link #size()} == 0
 	 * @see java.util.Collection#isEmpty()
 	 */
-	public boolean isEmpty() {
+	boolean isEmpty() {
 		return size() == 0;
 	}
 
 	/**
 	 * @see BlockingQueue#remainingCapacity()
 	 */
-	public int remainingCapacity() {
+	@Nonnegative
+	int remainingCapacity() {
 		lock.lock();
 		try {
 			return values.length - count;
@@ -216,20 +223,24 @@ final class BlockingBuffer<T> {
 		private final T value;
 		private Object attachment;
 
-		Tuple(final T value, final Object attachment) {
+		Tuple(@Nonnull final T value) {
+			this.value = value;
+		}
+
+		Tuple(@Nonnull final T value, @Nonnull final Object attachment) {
 			this.value = value;
 			this.attachment = attachment;
 		}
 
-		T getValue() {
+		@Nonnull T getValue() {
 			return value;
 		}
 
-		Object getAttachment() {
+		@Nonnull Object getAttachment() {
 			return attachment;
 		}
 
-		public void setAttachment(final Object attachment) {
+		void setAttachment(@Nonnull final Object attachment) {
 			this.attachment = attachment;
 		}
 	}

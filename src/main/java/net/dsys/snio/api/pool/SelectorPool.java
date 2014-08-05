@@ -16,6 +16,9 @@
 
 package net.dsys.snio.api.pool;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.io.AsyncCloseable;
 
 /**
@@ -25,10 +28,13 @@ public interface SelectorPool extends AsyncCloseable {
 
 	boolean isOpen();
 
+	@Nonnegative
 	int size();
 
+	@Nonnull
 	SelectorExecutor get(int index);
 
+	@Nonnull
 	SelectorExecutor next();
 
 }

@@ -19,6 +19,8 @@ package net.dsys.snio.impl.buffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.buffer.InterruptedByClose;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -38,7 +40,7 @@ final class BlockingQueueProducer<T> implements MessageBufferProducer<T> {
 	private long cursor;
 	private boolean closed;
 
-	BlockingQueueProducer(final BlockingBuffer<T> buffer, final Factory<T> factory) {
+	BlockingQueueProducer(@Nonnull final BlockingBuffer<T> buffer, @Nonnull final Factory<T> factory) {
 		if (buffer == null) {
 			throw new NullPointerException("buffer == null");
 		}
@@ -86,7 +88,7 @@ final class BlockingQueueProducer<T> implements MessageBufferProducer<T> {
 		int k = Math.min(n, buffer.capacity());
 		while (--k >= 0) {
 			final T value = factory.newInstance();
-			final Tuple<T> tuple = new Tuple<>(value, null);
+			final Tuple<T> tuple = new Tuple<>(value);
 			final Long key = Long.valueOf(++cursor);
 			temp.put(key, tuple);
 		}

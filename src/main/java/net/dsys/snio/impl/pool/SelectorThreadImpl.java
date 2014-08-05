@@ -34,6 +34,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.annotation.Nonnull;
+import javax.annotation.meta.When;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
@@ -58,7 +61,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	private Selector selector;
 	private Loop loop;
 
-	SelectorThreadImpl(final SelectionType type) {
+	SelectorThreadImpl(@Nonnull final SelectionType type) {
 		if (type == null) {
 			throw new NullPointerException("type == null");
 		}
@@ -73,7 +76,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		this.closeFuture = new SettableCallbackFuture<>();
 	}
 
-	private void queueOp(final IOOperation op) {
+	private void queueOp(@Nonnull final IOOperation op) {
 		ops.offer(op);
 		if (newOps.compareAndSet(false, true)) {
 			selector.wakeup();
@@ -140,7 +143,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	static void doCloseAttachment(final SelectionKey key) throws IOException {
+	static void doCloseAttachment(@Nonnull final SelectionKey key) throws IOException {
 		final Object attach = key.attachment();
 		if (attach instanceof Processor) {
 			((Processor) attach).close();
@@ -175,7 +178,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		return loop;
 	}
 
-	void bind(final SelectableChannel channel, final Acceptor acceptor) {
+	void bind(@Nonnull final SelectableChannel channel, @Nonnull final Acceptor acceptor) {
 		final IOOperation bind = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -190,13 +193,12 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @throws ClosedChannelException
 	 */
-	void doBind(final SelectableChannel channel, final Acceptor acceptor)
-			throws IOException {
+	void doBind(@Nonnull final SelectableChannel channel, @Nonnull final Acceptor acceptor) throws IOException {
 		final SelectionKey key = channel.register(selector, SelectionKey.OP_ACCEPT, acceptor);
 		acceptor.getAcceptor().registered(this, key);
 	}
 
-	void connect(final SelectableChannel channel, final Processor processor) {
+	void connect(@Nonnull final SelectableChannel channel, @Nonnull final Processor processor) {
 		final IOOperation bind = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -219,7 +221,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	void register(final SelectableChannel channel, final Processor processor) {
+	void register(@Nonnull final SelectableChannel channel, @Nonnull final Processor processor) {
 		final IOOperation register = new IOOperation() {
 			@Override
 			public void run() throws IOException {
@@ -234,7 +236,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @throws ClosedChannelException
 	 */
-	void doRegister(final SelectableChannel channel, final Processor processor) {
+	void doRegister(@Nonnull final SelectableChannel channel, @Nonnull final Processor processor) {
 		try {
 			final SelectionKey key = channel.register(selector, type.getOp(), processor);
 			processor.getProcessor().registered(this, key, type);
@@ -244,7 +246,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		}
 	}
 
-	void cancel(final SelectionKey key, final SettableCallbackFuture<Void> future) {
+	void cancel(@Nonnull final SelectionKey key, @Nonnull final SettableCallbackFuture<Void> future) {
 		final IOOperation cancel = new IOOperation() {
 			@Override
 			public void run() {
@@ -259,7 +261,8 @@ final class SelectorThreadImpl implements SelectorThread {
 		queueOp(cancel);
 	}
 
-	void cancel(final SelectionKey key, final SettableCallbackFuture<Void> future, final Callable<Void> task) {
+	void cancel(@Nonnull final SelectionKey key, @Nonnull final SettableCallbackFuture<Void> future,
+			@Nonnull final Callable<Void> task) {
 		final IOOperation cancel = new IOOperation() {
 			@Override
 			public void run() {
@@ -280,7 +283,7 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * @see net.dsys.snio.api.pool.SelectorThread#enableKey(java.nio.channels.SelectionKey)
 	 */
 	@Override
-	public void enableKey(final SelectionKey key) {
+	public void enableKey(@Nonnull final SelectionKey key) {
 		if (keys.add(key) && newKeys.compareAndSet(false, true)) {
 			selector.wakeup();
 		}
@@ -297,7 +300,8 @@ final class SelectorThreadImpl implements SelectorThread {
 		private final AtomicBoolean newOps;
 		private final Queue<IOOperation> ops;
 
-		public Loop(final Selector selector, final AtomicBoolean newOps, final Queue<IOOperation> ops) {
+		Loop(@Nonnull final Selector selector, @Nonnull final AtomicBoolean newOps,
+				@Nonnull final Queue<IOOperation> ops) {
 			if (selector == null) {
 				throw new NullPointerException("selector == null");
 			}
@@ -352,7 +356,7 @@ final class SelectorThreadImpl implements SelectorThread {
 		/**
 		 * Process a single SelectionKey.
 		 */
-		protected abstract void runKey(SelectionKey k);
+		protected abstract void runKey(@Nonnull SelectionKey k);
 
 		private void runOps() throws IOException {
 			if (newOps.compareAndSet(true, false)) {
@@ -370,7 +374,8 @@ final class SelectorThreadImpl implements SelectorThread {
 	 */
 	private static final class AcceptLoop extends Loop {
 
-		public AcceptLoop(final Selector selector, final AtomicBoolean newOps, final Queue<IOOperation> ops) {
+		AcceptLoop(@Nonnull final Selector selector, @Nonnull final AtomicBoolean newOps,
+				@Nonnull final Queue<IOOperation> ops) {
 			super(selector, newOps, ops);
 		}
 
@@ -401,7 +406,8 @@ final class SelectorThreadImpl implements SelectorThread {
 	 */
 	private static final class ReadLoop extends Loop {
 
-		public ReadLoop(final Selector selector, final AtomicBoolean newOps, final Queue<IOOperation> ops) {
+		ReadLoop(@Nonnull final Selector selector, @Nonnull final AtomicBoolean newOps,
+				@Nonnull final Queue<IOOperation> ops) {
 			super(selector, newOps, ops);
 		}
 
@@ -451,8 +457,9 @@ final class SelectorThreadImpl implements SelectorThread {
 		private final NavigableSet<SelectionKey> keys;
 		private final int op;
 
-		public WriteLoop(final Selector selector, final AtomicBoolean newOps, final Queue<IOOperation> ops,
-				final AtomicBoolean newKeys, final NavigableSet<SelectionKey> keys, final int op) {
+		WriteLoop(@Nonnull final Selector selector, @Nonnull final AtomicBoolean newOps,
+				@Nonnull final Queue<IOOperation> ops, @Nonnull final AtomicBoolean newKeys,
+				@Nonnull final NavigableSet<SelectionKey> keys, final int op) {
 			super(selector, newOps, ops);
 			if (newKeys == null) {
 				throw new NullPointerException("newKeys == null");
@@ -538,13 +545,15 @@ final class SelectorThreadImpl implements SelectorThread {
 	 */
 	private static final class KeyComparator implements Comparator<SelectionKey> {
 		KeyComparator() {
+			super();
 		}
 
 		/**
 		 * {@inheritDoc}
 		 */
 		@Override
-		public int compare(final SelectionKey o1, final SelectionKey o2) {
+		public int compare(@Nonnull(when = When.MAYBE) final SelectionKey o1,
+				@Nonnull(when = When.MAYBE) final SelectionKey o2) {
 			if ((o1 == o2) || (o1 == null && o2 == null)) {
 				return 0;
 			}

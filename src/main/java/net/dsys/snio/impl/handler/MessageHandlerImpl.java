@@ -24,6 +24,8 @@ import java.net.SocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.channel.AcceptListener;
@@ -46,8 +48,10 @@ final class MessageHandlerImpl<T> implements MessageHandler<T> {
 	private final AcceptListener<T> listener;
 	private final AtomicBoolean started;
 
-	MessageHandlerImpl(final ExecutorService executor, final ConsumerThreadFactory<T> threads,
-			final MessageConsumerFactory<T> factory, final AcceptListener<T> delegate) {
+	MessageHandlerImpl(@Nonnull final ExecutorService executor,
+			@Nonnull final ConsumerThreadFactory<T> threads,
+			@Nonnull final MessageConsumerFactory<T> factory,
+			@Nonnull final AcceptListener<T> delegate) {
 		if (executor == null) {
 			throw new NullPointerException("executor == null");
 		}
@@ -67,8 +71,10 @@ final class MessageHandlerImpl<T> implements MessageHandler<T> {
 		this.started = null;
 	}
 
-	MessageHandlerImpl(final ExecutorService executor, final ConsumerThreadFactory<T> factory,
-			final MessageConsumer<T> consumer, final AcceptListener<T> delegate) {
+	MessageHandlerImpl(@Nonnull final ExecutorService executor,
+			@Nonnull final ConsumerThreadFactory<T> factory,
+			@Nonnull final MessageConsumer<T> consumer,
+			@Nonnull final AcceptListener<T> delegate) {
 		if (executor == null) {
 			throw new NullPointerException("executor == null");
 		}
@@ -96,7 +102,7 @@ final class MessageHandlerImpl<T> implements MessageHandler<T> {
 		return listener;
 	}
 
-	void accept(final SocketAddress remote, final MessageChannel<T> channel) {
+	void accept(@Nonnull final SocketAddress remote, @Nonnull final MessageChannel<T> channel) {
 		if (delegate != null) {
 			delegate.connectionAccepted(remote, channel);
 		}

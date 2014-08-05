@@ -16,6 +16,8 @@
 
 package net.dsys.snio.impl.handler;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.handler.MessageConsumer;
 
@@ -24,6 +26,7 @@ import net.dsys.snio.api.handler.MessageConsumer;
  */
 interface ConsumerThreadFactory<T> {
 
-	Runnable newInstance(MessageBufferConsumer<T> in, MessageConsumer<T> consumer);
+	@Nonnull
+	Runnable newInstance(@Nonnull MessageBufferConsumer<T> in, @Nonnull MessageConsumer<T> consumer);
 
 }

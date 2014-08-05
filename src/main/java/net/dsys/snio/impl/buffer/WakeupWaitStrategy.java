@@ -16,6 +16,8 @@
 
 package net.dsys.snio.impl.buffer;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.snio.api.pool.KeyProcessor;
 
@@ -31,18 +33,18 @@ import com.lmax.disruptor.WaitStrategy;
  *  
  * @author Ricardo Padilha
  */
-public final class WakeupWaitStrategy implements WaitStrategy {
+final class WakeupWaitStrategy implements WaitStrategy {
 
 	private KeyProcessor<?> processor;
 
-	public WakeupWaitStrategy() {
+	WakeupWaitStrategy() {
 		super();
 	}
 
 	/**
 	 * Set the channel to wake up when {@link #signalAllWhenBlocking()} is called.
 	 */
-	public void setProcessor(final KeyProcessor<?> processor) {
+	void setProcessor(@Nonnull final KeyProcessor<?> processor) {
 		if (processor == null) {
 			throw new NullPointerException("processor == null");
 		}

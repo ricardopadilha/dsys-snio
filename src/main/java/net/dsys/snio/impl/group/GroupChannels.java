@@ -19,6 +19,8 @@ package net.dsys.snio.impl.group;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.api.lang.Factory;
@@ -49,6 +51,7 @@ public final class GroupChannels {
 		return;
 	}
 
+	@Nonnull
 	public static TCPGroupBuilder newTCPGroup() {
 		return new TCPGroupBuilder();
 	}

@@ -16,6 +16,8 @@
 
 package net.dsys.snio.api.channel;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.snio.api.io.AsyncServerChannel;
 
 /**
@@ -27,11 +29,13 @@ public interface MessageServerChannel<E> extends AsyncServerChannel {
 	 * Provide an action to be performed when a new client connection is
 	 * accepted.
 	 */
-	MessageServerChannel<E> onAccept(AcceptListener<E> listener);
+	@Nonnull
+	MessageServerChannel<E> onAccept(@Nonnull AcceptListener<E> listener);
 
 	/**
 	 * Provide an action to be performed when a connection is closed.
 	 */
-	MessageServerChannel<E> onClose(CloseListener<E> listener);
+	@Nonnull
+	MessageServerChannel<E> onClose(@Nonnull CloseListener<E> listener);
 
 }

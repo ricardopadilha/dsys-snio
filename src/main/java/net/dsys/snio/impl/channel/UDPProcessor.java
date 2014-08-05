@@ -23,6 +23,8 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -44,8 +46,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	private ByteBuffer receiveBuffer;
 	private ByteBuffer sendBuffer;
 
-	UDPProcessor(final MessageCodec codec, final RateLimiter limiter,
-			final MessageBufferProvider<ByteBuffer> provider) {
+	UDPProcessor(@Nonnull final MessageCodec codec,
+			@Nonnull final RateLimiter limiter,
+			@Nonnull final MessageBufferProvider<ByteBuffer> provider) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");

@@ -18,6 +18,9 @@ package net.dsys.snio.impl.pool;
 
 import java.io.IOException;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.impl.future.MergingCallbackFuture;
 import net.dsys.snio.api.pool.SelectorExecutor;
@@ -33,7 +36,8 @@ final class SelectorPoolImpl implements SelectorPool {
 	private final SelectorExecutorImpl[] selectors;
 	private CallbackFuture<Void> closeFuture;
 
-	SelectorPoolImpl(final String name, final int size, final SelectorPolicy policy) {
+	SelectorPoolImpl(@Nonnull final String name, @Nonnegative final int size,
+			@Nonnull final SelectorPolicy policy) {
 		if (size < 1) {
 			throw new IllegalArgumentException("size < 1: " + size);
 		}

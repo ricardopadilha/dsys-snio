@@ -23,6 +23,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.exception.Bug;
 import net.dsys.commons.impl.future.SettableCallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
@@ -46,9 +49,11 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	private ByteBuffer sendBuffer;
 	private long writeSequence;
 
-	TCPProcessor(final MessageCodec codec, final RateLimiter limiter,
-			final MessageBufferProvider<ByteBuffer> provider,
-			final int sendBufferSize, final int receiveBufferSize) {
+	TCPProcessor(@Nonnull final MessageCodec codec,
+			@Nonnull final RateLimiter limiter,
+			@Nonnull final MessageBufferProvider<ByteBuffer> provider,
+			@Nonnegative final int sendBufferSize,
+			@Nonnegative final int receiveBufferSize) {
 		super(provider);
 		if (codec == null) {
 			throw new NullPointerException("codec == null");

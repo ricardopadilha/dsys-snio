@@ -18,6 +18,8 @@ package net.dsys.snio.api.group;
 
 import java.util.Iterator;
 
+import javax.annotation.Nonnull;
+
 /**
  * @author Ricardo Padilha
  */
@@ -27,7 +29,7 @@ public final class GroupDataIterator<T> implements Iterator<T> {
 	private final int k;
 	private int i;
 
-	public GroupDataIterator(final GroupData<T> data) {
+	public GroupDataIterator(@Nonnull final GroupData<T> data) {
 		if (data == null) {
 			throw new NullPointerException("data == null");
 		}
@@ -48,6 +50,7 @@ public final class GroupDataIterator<T> implements Iterator<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
+	@Nonnull
 	public T next() {
 		return data.get(++i);
 	}

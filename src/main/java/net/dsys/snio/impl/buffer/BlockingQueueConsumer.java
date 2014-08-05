@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.snio.api.buffer.InterruptedByClose;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
@@ -37,7 +39,7 @@ final class BlockingQueueConsumer<T> implements MessageBufferConsumer<T> {
 	private AtomicLong cursor;
 	private boolean closed;
 
-	BlockingQueueConsumer(final BlockingBuffer<T> buffer, final Factory<T> factory) {
+	BlockingQueueConsumer(@Nonnull final BlockingBuffer<T> buffer, @Nonnull final Factory<T> factory) {
 		if (buffer == null) {
 			throw new NullPointerException("queue == null");
 		}

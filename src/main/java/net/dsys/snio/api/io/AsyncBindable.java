@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.NetworkChannel;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import net.dsys.commons.api.future.CallbackFuture;
 
 /**
@@ -36,7 +39,8 @@ public interface AsyncBindable {
 	/**
 	 * @see NetworkChannel#bind(SocketAddress)
 	 */
-	NetworkChannel bind(SocketAddress local) throws IOException;
+	@Nonnull
+	NetworkChannel bind(@Nullable SocketAddress local) throws IOException;
 
 	/**
 	 * The {@code backlog} parameter is the maximum number of pending
@@ -48,12 +52,14 @@ public interface AsyncBindable {
 	 * 
 	 * @see NetworkChannel#bind(SocketAddress)
 	 */
-	NetworkChannel bind(SocketAddress local, int backlog) throws IOException;
+	@Nonnull
+	NetworkChannel bind(@Nullable SocketAddress local, int backlog) throws IOException;
 
 	/**
 	 * @return a {@link Future} that is done when this channel is bound. Any
 	 *         exceptions raised during the binding is returned by this future.
 	 */
+	@Nonnull
 	CallbackFuture<Void> getBindFuture();
 
 }

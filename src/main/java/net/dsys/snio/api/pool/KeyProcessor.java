@@ -21,6 +21,9 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
+import javax.annotation.meta.When;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProducer;
@@ -34,8 +37,9 @@ public interface KeyProcessor<T> {
 	 * Exceptions should be redirected to the {@link Future} returned by
 	 * {@link #connect(SelectionKey)}.
 	 */
-	void connect(SelectionKey key);
+	void connect(@Nonnull SelectionKey key);
 
+	@Nonnull
 	CallbackFuture<Void> getConnectionFuture();
 
 	/**
@@ -46,15 +50,18 @@ public interface KeyProcessor<T> {
 	 *            before the registration could be completed.
 	 * @param type
 	 */
-	void registered(SelectorThread thread, SelectionKey key, SelectionType type);
+	void registered(@Nonnull SelectorThread thread, @Nonnull(when = When.MAYBE) SelectionKey key,
+			@Nonnull SelectionType type);
 
+	@Nonnull
 	MessageBufferConsumer<T> getInputBuffer();
 
+	@Nonnull
 	MessageBufferProducer<T> getOutputBuffer();
 
-	long read(SelectionKey key) throws IOException;
+	long read(@Nonnull SelectionKey key) throws IOException;
 
-	long write(SelectionKey key) throws IOException;
+	long write(@Nonnull SelectionKey key) throws IOException;
 
 	/**
 	 * Add WRITE interest to this processor's key.
@@ -65,8 +72,9 @@ public interface KeyProcessor<T> {
 	 * Close this processor properly, i.e., cancel from within the selector
 	 * threads.
 	 */
-	void close(SelectorExecutor executor, Callable<Void> closeTask);
+	void close(@Nonnull SelectorExecutor executor, @Nonnull Callable<Void> closeTask);
 
+	@Nonnull
 	CallbackFuture<Void> getCloseFuture();
 
 }

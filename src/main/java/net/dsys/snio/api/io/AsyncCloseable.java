@@ -20,6 +20,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 
 /**
@@ -49,6 +51,7 @@ public interface AsyncCloseable extends Closeable {
 	 * @return a {@link Future} that is done when this channel is closed. Any
 	 *         exceptions raised during the closing is returned by this future.
 	 */
+	@Nonnull
 	CallbackFuture<Void> getCloseFuture();
 
 }

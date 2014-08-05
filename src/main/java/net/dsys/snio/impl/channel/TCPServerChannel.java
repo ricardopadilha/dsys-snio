@@ -24,6 +24,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.snio.api.channel.AcceptListener;
 import net.dsys.snio.api.channel.CloseListener;
@@ -42,7 +44,7 @@ final class TCPServerChannel<T> implements MessageServerChannel<T>, Acceptor {
 	private final KeyAcceptor<T> acceptor;
 	private ServerSocketChannel channel;
 
-	TCPServerChannel(final SelectorPool pool, final KeyAcceptor<T> acceptor) {
+	TCPServerChannel(@Nonnull final SelectorPool pool, @Nonnull final KeyAcceptor<T> acceptor) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}

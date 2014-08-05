@@ -23,6 +23,9 @@ import java.nio.channels.NetworkChannel;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.future.CallbackFuture;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.impl.future.MergingCallbackFuture;
@@ -48,8 +51,8 @@ final class GroupChannel<T> implements MessageChannel<T> {
 	private CallbackFuture<Void> connectFuture;
 	private CallbackFuture<Void> closeFuture;
 
-	GroupChannel(final MessageBufferConsumer<T> in, final ChannelFactory<T> factory,
-			final Copier<T> copier) {
+	GroupChannel(@Nonnull final MessageBufferConsumer<T> in, @Nonnull final ChannelFactory<T> factory,
+			@Nonnull final Copier<T> copier) {
 		if (in == null) {
 			throw new NullPointerException("in == null");
 		}
@@ -75,7 +78,7 @@ final class GroupChannel<T> implements MessageChannel<T> {
 		return this;
 	}
 
-	void open(final int size) throws IOException {
+	void open(@Nonnegative final int size) throws IOException {
 		if (channels != null) {
 			return;
 		}

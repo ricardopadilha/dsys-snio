@@ -18,10 +18,12 @@ package net.dsys.snio.api.group;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
+
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author Ricardo Padilha
@@ -30,44 +32,46 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 
 	private static final long serialVersionUID = 1L;
 
-	private final SocketAddress[] addresses;
+	private final List<SocketAddress> addresses;
 
-	GroupSocketAddress(final SocketAddress... addresses) {
+	GroupSocketAddress(@Nonnull final List<SocketAddress> addresses) {
 		if (addresses == null) {
 			throw new NullPointerException("addresses == null");
 		}
-		if (addresses.length == 0) {
-			throw new IllegalArgumentException("addresses.length == 0");
+		if (addresses.isEmpty()) {
+			throw new IllegalArgumentException("addresses.isEmpty()");
 		}
-		final int k = addresses.length;
+		final int k = addresses.size();
 		for (int i = 0; i < k; i++) {
-			if (addresses[i] == null) {
-				throw new NullPointerException("addresses[" + i + "] == null");
+			if (addresses.get(i) == null) {
+				throw new NullPointerException("addresses.get(" + i + ") == null");
 			}
 		}
-		this.addresses = addresses.clone();
+		this.addresses = new ArrayList<>(addresses);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
+	@Nonnegative
 	public int size() {
-		return addresses.length;
+		return addresses.size();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public SocketAddress get(final int index) {
-		return addresses[index];
+	public SocketAddress get(@Nonnegative final int index) {
+		return addresses.get(index);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
+	@Nonnull
 	public Iterator<SocketAddress> iterator() {
 		return new GroupDataIterator<>(this);
 	}
@@ -76,7 +80,7 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(@Nullable final Object obj) {
 		if (obj == this) {
 			return true;
 		}
@@ -84,7 +88,7 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 			return false;
 		}
 		if (obj instanceof GroupSocketAddress) {
-			return Arrays.equals(addresses, ((GroupSocketAddress) obj).addresses);
+			return addresses.equals(((GroupSocketAddress) obj).addresses);
 		}
 		return false;
 	}
@@ -94,17 +98,19 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash((Object[]) addresses);
+		return addresses.hashCode();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
+	@Nonnull
 	public String toString() {
-		return Arrays.toString(addresses);
+		return addresses.toString();
 	}
 
+	@Nonnull
 	public static Builder build() {
 		return new Builder();
 	}
@@ -120,7 +126,8 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 			this.list = new ArrayList<>();
 		}
 
-		public Builder add(final SocketAddress address) {
+		@Nonnull
+		public Builder add(@Nonnull final SocketAddress address) {
 			if (address == null) {
 				throw new NullPointerException("address == null");
 			}
@@ -128,8 +135,9 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 			return this;
 		}
 
+		@Nonnull
 		public GroupSocketAddress build() {
-			return new GroupSocketAddress(list.toArray(new SocketAddress[list.size()]));
+			return new GroupSocketAddress(list);
 		}
 
 	}
