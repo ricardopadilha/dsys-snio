@@ -140,7 +140,7 @@ public final class ProviderTest {
 
 	@Test
 	public void testRingBuffer() throws InterruptedException, ExecutionException {
-		provider = RingBufferProvider.createFactory(1, factory).newInstance();
+		provider = RingBufferProvider.createProviderFactory(1, factory).newInstance();
 		out = provider.getChannelOutput();
 		in = provider.getAppInput();
 		test(out, in);
@@ -148,7 +148,7 @@ public final class ProviderTest {
 
 	@Test
 	public void testBlockingQueue() throws InterruptedException, ExecutionException {
-		provider = BlockingQueueProvider.createFactory(1, factory).newInstance();
+		provider = BlockingQueueProvider.createProviderFactory(1, factory).newInstance();
 		out = provider.getChannelOutput();
 		in = provider.getAppInput();
 		test(out, in);

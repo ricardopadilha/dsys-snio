@@ -43,8 +43,11 @@ import net.dsys.snio.api.pool.SelectorPool;
  */
 final class UDPChannel<T> implements MessageChannel<T>, Processor {
 
+	@Nonnull
 	private final SelectorExecutor selector;
+	@Nonnull
 	private final KeyProcessor<T> processor;
+	@Nonnull
 	private CloseListener<T> close;
 	private DatagramChannel channel;
 
@@ -57,6 +60,7 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 		}
 		this.selector = pool.next();
 		this.processor = processor;
+		this.close = MessageChannels.dummyCloseListener();
 	}
 
 	/**
@@ -72,6 +76,9 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 	 */
 	@Override
 	public MessageChannel<T> onClose(final CloseListener<T> listener) {
+		if (listener == null) {
+			throw new NullPointerException("listener == null");
+		}
 		this.close = listener;
 		return this;
 	}
@@ -194,9 +201,7 @@ final class UDPChannel<T> implements MessageChannel<T>, Processor {
 				if (channel != null) {
 					channel.close();
 				}
-				if (close != null) {
-					close.connectionClosed(UDPChannel.this);
-				}
+				close.connectionClosed(UDPChannel.this);
 				return null;
 			}
 		};

@@ -51,16 +51,23 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 
 	private static final int NO_SEQUENCE = -1;
 
+	@Nonnull
 	private final MessageCodec codec;
+	@Nonnull
 	private final RateLimiter limiter;
+	@Nonnull
 	private final SSLEngine engine;
+	@Nonnegative
 	private final int sendSize;
+	@Nonnegative
 	private final int receiveSize;
+
 	private ByteBuffer receiveBuffer;
 	private ByteBuffer sendBuffer;
 	private ByteBuffer preSendBuffer;
 	private ByteBuffer postReceiveBuffer;
 	private long writeSequence;
+
 	private volatile SettableCallbackFuture<Void> closeFuture;
 	private volatile Callable<Void> closeTask;
 	private volatile boolean closedInternally;
@@ -120,6 +127,9 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void readRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		final SSLSession session = engine.getSession();
 		final int delta = session.getPacketBufferSize() - session.getApplicationBufferSize();
 		final int outSize = Math.max(receiveSize, session.getPacketBufferSize());
@@ -133,6 +143,9 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void writeRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		final SSLSession session = engine.getSession();
 		final int delta = session.getPacketBufferSize() - session.getApplicationBufferSize();
 		final int inSize = Math.max(sendSize - delta, session.getApplicationBufferSize());
@@ -204,15 +217,7 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 					}
 					break;
 				}
-				case BUFFER_UNDERFLOW: {
-					assert result.bytesConsumed() == 0 && result.bytesProduced() == 0;
-					// We can't decrypt more until some bytes are received.
-					// We have to "unflip" receiveBuffer, otherwise the flip above
-					// will "zero" the buffer the next time read() is called.
-					receiveBuffer.position(receiveBuffer.limit());
-					receiveBuffer.limit(receiveBuffer.capacity());
-					break;
-				}
+				case BUFFER_UNDERFLOW:
 				case BUFFER_OVERFLOW: {
 					assert result.bytesConsumed() == 0 && result.bytesProduced() == 0;
 					// We can't decrypt more until some bytes are delivered.
@@ -380,22 +385,17 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 		return n;
 	}
 
-	private void shutdown() {
-		try {
-			codec.close();
-			closeTask.call();
-			closeFuture.success(null);
-			closed = true;
-		} catch (final Throwable t) {
-			closeFuture.fail(t);
-		}
-	}
-
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	protected void shutdown(final SettableCallbackFuture<Void> future, final Callable<Void> task) {
+		if (future == null) {
+			throw new NullPointerException("future == null");
+		}
+		if (task == null) {
+			throw new NullPointerException("task == null");
+		}
 		this.closeFuture = future;
 		this.closeTask = task;
 		engine.closeOutbound();
@@ -404,6 +404,17 @@ final class SSLProcessor extends AbstractProcessor<ByteBuffer> {
 			shutdown();
 		} else {
 			wakeupWriter();
+		}
+	}
+
+	private void shutdown() {
+		try {
+			codec.close();
+			closeTask.call();
+			closeFuture.success(null);
+			closed = true;
+		} catch (final Throwable t) {
+			closeFuture.fail(t);
 		}
 	}
 

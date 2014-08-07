@@ -19,16 +19,11 @@ package net.dsys.snio.impl.channel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
 import javax.net.ssl.SSLContext;
 
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
-import net.dsys.commons.impl.builder.Mandatory;
-import net.dsys.commons.impl.builder.OptionGroup;
-import net.dsys.commons.impl.builder.Optional;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
 import net.dsys.snio.api.buffer.MessageBufferProvider;
 import net.dsys.snio.api.channel.MessageServerChannel;
@@ -36,8 +31,9 @@ import net.dsys.snio.api.codec.MessageCodec;
 import net.dsys.snio.api.limit.RateLimiter;
 import net.dsys.snio.api.pool.KeyAcceptor;
 import net.dsys.snio.api.pool.SelectorPool;
-import net.dsys.snio.impl.channel.builder.CommonBuilderData;
-import net.dsys.snio.impl.channel.builder.ServerBuilderData;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.SSLConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 
 /**
  * Helper class to create {@link MessageServerChannel} instances.
@@ -51,11 +47,59 @@ public final class MessageServerChannels {
 	}
 
 	@Nonnull
+	public static MessageServerChannel<ByteBuffer> openTCPServerChannel(
+			@Nonnull final ChannelConfig<ByteBuffer> common,
+			@Nonnull final ServerConfig server) throws IOException {
+		if (common == null) {
+			throw new NullPointerException("common == null");
+		}
+		if (server == null) {
+			throw new NullPointerException("server == null");
+		}
+
+		final Factory<MessageCodec> codecs = server.getMessageCodecs();
+		final Factory<RateLimiter> limiters = server.getRateLimiters();
+		final Factory<ByteBuffer> factory = common.getFactory(codecs.newInstance().getBodyLength());
+		final Factory<MessageBufferProvider<ByteBuffer>> provider = common.getProviderFactory(factory);
+		final SelectorPool pool = common.getPool();
+		final KeyAcceptor<ByteBuffer> acceptor = new TCPAcceptor(pool, codecs, limiters, provider,
+				common.getSendBufferSize(), common.getReceiveBufferSize());
+		final TCPServerChannel<ByteBuffer> channel = new TCPServerChannel<>(pool, acceptor);
+		channel.open();
+		return channel;
+	}
+
+	@Nonnull
+	public static MessageServerChannel<ByteBuffer> openSSLServerChannel(
+			@Nonnull final ChannelConfig<ByteBuffer> common,
+			@Nonnull final ServerConfig server,
+			@Nonnull final SSLConfig ssl) throws IOException {
+		if (common == null) {
+			throw new NullPointerException("common == null");
+		}
+		if (server == null) {
+			throw new NullPointerException("server == null");
+		}
+		if (ssl == null) {
+			throw new NullPointerException("ssl == null");
+		}
+
+		final Factory<MessageCodec> codecs = server.getMessageCodecs();
+		final Factory<RateLimiter> limiters = server.getRateLimiters();
+		final Factory<ByteBuffer> factory = common.getFactory(codecs.newInstance().getBodyLength());
+		final Factory<MessageBufferProvider<ByteBuffer>> provider = common.getProviderFactory(factory);
+		final SelectorPool pool = common.getPool();
+		final KeyAcceptor<ByteBuffer> acceptor = new SSLAcceptor(pool, codecs, limiters, provider,
+				common.getSendBufferSize(), common.getReceiveBufferSize(), ssl.getContext());
+		final TCPServerChannel<ByteBuffer> channel = new TCPServerChannel<>(pool, acceptor);
+		channel.open();
+		return channel;
+	}
+
 	public static TCPServerChannelBuilder newTCPServerChannel() {
 		return new TCPServerChannelBuilder();
 	}
 
-	@Nonnull
 	public static SSLServerChannelBuilder newSSLServerChannel() {
 		return new SSLServerChannelBuilder();
 	}
@@ -63,129 +107,138 @@ public final class MessageServerChannels {
 	/**
 	 * @author Ricardo Padilha
 	 */
-	@ParametersAreNonnullByDefault
 	public static final class TCPServerChannelBuilder {
 
-		private final CommonBuilderData<ByteBuffer> common;
-		private final ServerBuilderData server;
+		private final ChannelConfig<ByteBuffer> common;
+		private final ServerConfig server;
 
 		TCPServerChannelBuilder() {
-			this.common = new CommonBuilderData<>();
-			this.server = new ServerBuilderData();
+			this.common = new ChannelConfig<>();
+			this.server = new ServerConfig();
 		}
 
-		@Mandatory(restrictions = "pool != null")
+		/**
+		 * @see ChannelConfig#setPool(SelectorPool)
+		 */
 		public TCPServerChannelBuilder setPool(final SelectorPool pool) {
 			common.setPool(pool);
 			return this;
 		}
 
-		@Optional(defaultValue = "256", restrictions = "capacity > 0")
-		public TCPServerChannelBuilder setBufferCapacity(@Nonnegative final int capacity) {
+		/**
+		 * @see ChannelConfig#setBufferCapacity(int)
+		 */
+		public TCPServerChannelBuilder setBufferCapacity(final int capacity) {
 			common.setBufferCapacity(capacity);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
-		public TCPServerChannelBuilder setSendBufferSize(@Nonnegative final int sendBufferSize) {
+		/**
+		 * @see ChannelConfig#setSendBufferSize(int)
+		 */
+		public TCPServerChannelBuilder setSendBufferSize(final int sendBufferSize) {
 			common.setSendBufferSize(sendBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
-		public TCPServerChannelBuilder setReceiveBufferSize(@Nonnegative final int receiveBufferSize) {
+		/**
+		 * @see ChannelConfig#setReceiveBufferSize(int)
+		 */
+		public TCPServerChannelBuilder setReceiveBufferSize(final int receiveBufferSize) {
 			common.setReceiveBufferSize(receiveBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useHeapBuffer()")
+		/**
+		 * @see ChannelConfig#useDirectBuffer()
+		 */
 		public TCPServerChannelBuilder useDirectBuffer() {
 			common.useDirectBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useDirectBuffer()")
+		/**
+		 * @see ChannelConfig#useHeapBuffer()
+		 */
 		public TCPServerChannelBuilder useHeapBuffer() {
 			common.useHeapBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()", restrictions = "requires disruptor library")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useBlockingQueue()")
+		/**
+		 * @see ChannelConfig#useRingBuffer()
+		 */
 		public TCPServerChannelBuilder useRingBuffer() {
 			common.useRingBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useRingBuffer()")
+		/**
+		 * @see ChannelConfig#useBlockingQueue()
+		 */
 		public TCPServerChannelBuilder useBlockingQueue() {
 			common.useBlockingQueue();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(consumer), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer()
+		 */
 		public TCPServerChannelBuilder useSingleInputBuffer() {
 			common.useSingleInputBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()", restrictions = "consumer != null")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer(net.dsys.snio.api.buffer.MessageBufferConsumer)
+		 */
 		public TCPServerChannelBuilder useSingleInputBuffer(final MessageBufferConsumer<ByteBuffer> consumer) {
 			common.useSingleInputBuffer(consumer);
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useSingleInputBuffer(consumer)")
+		/**
+		 * @see ChannelConfig#useMultipleInputBuffers()
+		 */
 		public TCPServerChannelBuilder useMultipleInputBuffers() {
 			common.useMultipleInputBuffers();
 			return this;
 		}
 
-		@Mandatory(restrictions = "codecs != null")
-		@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
+		/**
+		 * @see ServerConfig#setMessageCodec(Factory)
+		 */
 		public TCPServerChannelBuilder setMessageCodec(final Factory<MessageCodec> codecs) {
 			server.setMessageCodec(codecs);
 			return this;
 		}
 
-		@Mandatory(restrictions = "length > 0")
-		@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codecs)")
-		public TCPServerChannelBuilder setMessageLength(@Nonnegative final int length) {
+		/**
+		 * @see ServerConfig#setMessageLength(int)
+		 */
+		public TCPServerChannelBuilder setMessageLength(final int length) {
 			server.setMessageLength(length);
 			return this;
 		}
 
-		@Mandatory(restrictions = "limiters != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimit(value, unit)")
+		/**
+		 * @see ServerConfig#setRateLimiter(Factory)
+		 */
 		public TCPServerChannelBuilder setRateLimiter(final Factory<RateLimiter> limiters) {
 			server.setRateLimiter(limiters);
 			return this;
 		}
 
-		@Mandatory(restrictions = "value >= 1 && unit != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiters)")
-		public TCPServerChannelBuilder setRateLimit(@Nonnegative final long value, final BinaryUnit unit) {
+		/**
+		 * @see ServerConfig#setRateLimit(long, BinaryUnit)
+		 */
+		public TCPServerChannelBuilder setRateLimit(final long value, final BinaryUnit unit) {
 			server.setRateLimit(value, unit);
 			return this;
 		}
 
 		public MessageServerChannel<ByteBuffer> open() throws IOException {
-			final Factory<MessageCodec> codecs = server.getMessageCodecs();
-			final Factory<RateLimiter> limiters = server.getRateLimiters();
-			final Factory<ByteBuffer> factory = common.getFactory(codecs.newInstance().getBodyLength());
-			final Factory<MessageBufferProvider<ByteBuffer>> provider = common.getProviderFactory(factory);
-			final SelectorPool pool = common.getPool();
-			final KeyAcceptor<ByteBuffer> acceptor = new TCPAcceptor(pool, codecs, limiters, provider,
-					common.getSendBufferSize(), common.getReceiveBufferSize());
-			final TCPServerChannel<ByteBuffer> channel = new TCPServerChannel<>(pool, acceptor);
-			channel.open();
-			return channel;
+			return openTCPServerChannel(common, server);
 		}
 	}
 
@@ -194,136 +247,146 @@ public final class MessageServerChannels {
 	 */
 	public static final class SSLServerChannelBuilder {
 
-		private final CommonBuilderData<ByteBuffer> common;
-		private final ServerBuilderData server;
-		private SSLContext context;
+		private final ChannelConfig<ByteBuffer> common;
+		private final ServerConfig server;
+		private final SSLConfig ssl;
 
 		SSLServerChannelBuilder() {
-			this.common = new CommonBuilderData<>();
-			this.server = new ServerBuilderData();
+			this.common = new ChannelConfig<>();
+			this.server = new ServerConfig();
+			this.ssl = new SSLConfig();
 		}
 
-		@Mandatory(restrictions = "pool != null")
+		/**
+		 * @see ChannelConfig#setPool(SelectorPool)
+		 */
 		public SSLServerChannelBuilder setPool(final SelectorPool pool) {
 			common.setPool(pool);
 			return this;
 		}
 
-		@Optional(defaultValue = "256", restrictions = "capacity > 0")
+		/**
+		 * @see ChannelConfig#setBufferCapacity(int)
+		 */
 		public SSLServerChannelBuilder setBufferCapacity(final int capacity) {
 			common.setBufferCapacity(capacity);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
+		/**
+		 * @see ChannelConfig#setSendBufferSize(int)
+		 */
 		public SSLServerChannelBuilder setSendBufferSize(final int sendBufferSize) {
 			common.setSendBufferSize(sendBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
+		/**
+		 * @see ChannelConfig#setReceiveBufferSize(int)
+		 */
 		public SSLServerChannelBuilder setReceiveBufferSize(final int receiveBufferSize) {
 			common.setReceiveBufferSize(receiveBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useHeapBuffer()")
+		/**
+		 * @see ChannelConfig#useDirectBuffer()
+		 */
 		public SSLServerChannelBuilder useDirectBuffer() {
 			common.useDirectBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useDirectBuffer()")
+		/**
+		 * @see ChannelConfig#useHeapBuffer()
+		 */
 		public SSLServerChannelBuilder useHeapBuffer() {
 			common.useHeapBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()", restrictions = "requires disruptor library")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useBlockingQueue()")
+		/**
+		 * @see ChannelConfig#useRingBuffer()
+		 */
 		public SSLServerChannelBuilder useRingBuffer() {
 			common.useRingBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useRingBuffer()")
+		/**
+		 * @see ChannelConfig#useBlockingQueue()
+		 */
 		public SSLServerChannelBuilder useBlockingQueue() {
 			common.useBlockingQueue();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(consumer), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer()
+		 */
 		public SSLServerChannelBuilder useSingleInputBuffer() {
 			common.useSingleInputBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()", restrictions = "consumer != null")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer(net.dsys.snio.api.buffer.MessageBufferConsumer)
+		 */
 		public SSLServerChannelBuilder useSingleInputBuffer(final MessageBufferConsumer<ByteBuffer> consumer) {
 			common.useSingleInputBuffer(consumer);
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useSingleInputBuffer(consumer)")
+		/**
+		 * @see ChannelConfig#useMultipleInputBuffers()
+		 */
 		public SSLServerChannelBuilder useMultipleInputBuffers() {
 			common.useMultipleInputBuffers();
 			return this;
 		}
 
-		@Mandatory(restrictions = "codecs != null")
-		@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
+		/**
+		 * @see ServerConfig#setMessageCodec(Factory)
+		 */
 		public SSLServerChannelBuilder setMessageCodec(final Factory<MessageCodec> codecs) {
 			server.setMessageCodec(codecs);
 			return this;
 		}
 
-		@Mandatory(restrictions = "length > 0")
-		@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codecs)")
+		/**
+		 * @see ServerConfig#setMessageLength(int)
+		 */
 		public SSLServerChannelBuilder setMessageLength(final int length) {
 			server.setMessageLength(length);
 			return this;
 		}
 
-		@Mandatory(restrictions = "limiters != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimit(value, unit)")
+		/**
+		 * @see ServerConfig#setRateLimiter(Factory)
+		 */
 		public SSLServerChannelBuilder setRateLimiter(final Factory<RateLimiter> limiters) {
 			server.setRateLimiter(limiters);
 			return this;
 		}
 
-		@Mandatory(restrictions = "value >= 1 && unit != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiters)")
+		/**
+		 * @see ServerConfig#setRateLimit(long, BinaryUnit)
+		 */
 		public SSLServerChannelBuilder setRateLimit(final long value, final BinaryUnit unit) {
 			server.setRateLimit(value, unit);
 			return this;
 		}
 
-		@Mandatory(restrictions = "context != null")
+		/**
+		 * @see SSLConfig#setContext(SSLContext)
+		 */
 		public SSLServerChannelBuilder setContext(final SSLContext context) {
-			if (context == null) {
-				throw new NullPointerException("context == null");
-			}
-			this.context = context;
+			ssl.setContext(context);
 			return this;
 		}
 
 		public MessageServerChannel<ByteBuffer> open() throws IOException {
-			final Factory<MessageCodec> codecs = server.getMessageCodecs();
-			final Factory<RateLimiter> limiters = server.getRateLimiters();
-			final Factory<ByteBuffer> factory = common.getFactory(codecs.newInstance().getBodyLength());
-			final Factory<MessageBufferProvider<ByteBuffer>> provider = common.getProviderFactory(factory);
-			final SelectorPool pool = common.getPool();
-			final KeyAcceptor<ByteBuffer> acceptor = new SSLAcceptor(pool, codecs, limiters, provider,
-					common.getSendBufferSize(), common.getReceiveBufferSize(), context);
-			final TCPServerChannel<ByteBuffer> channel = new TCPServerChannel<>(pool, acceptor);
-			channel.open();
-			return channel;
+			return openSSLServerChannel(common, server, ssl);
 		}
 	}
 }

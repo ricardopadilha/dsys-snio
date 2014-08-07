@@ -32,6 +32,9 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
+import net.dsys.snio.impl.channel.builder.ClientConfig;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.SSLConfig;
 import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
@@ -59,18 +62,20 @@ public final class SSLEchoClient {
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
-		final MessageChannel<ByteBuffer> client = MessageChannels.newSSLChannel()
-				.setContext(getContext())
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
-				.setMessageCodec(Codecs.getLZ4Compression(length))
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ClientConfig client = new ClientConfig()
+				.setMessageCodec(Codecs.getLZ4Compression(length));
+		final SSLConfig ssl = new SSLConfig()
+				.setContext(getContext());
+		final MessageChannel<ByteBuffer> channel = MessageChannels.openSSLChannel(common, client, ssl);
 
-		client.connect(new InetSocketAddress(host, port));
-		client.getConnectFuture().get();
+		channel.connect(new InetSocketAddress(host, port));
+		channel.getConnectFuture().get();
 
-		final MessageBufferConsumer<ByteBuffer> in = client.getInputBuffer();
-		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
+		final MessageBufferConsumer<ByteBuffer> in = channel.getInputBuffer();
+		final MessageBufferProducer<ByteBuffer> out = channel.getOutputBuffer();
 
 		final ExecutorService executor = Executors.newCachedThreadPool();
 		executor.execute(MessageHandlers.syncConsumer(in, new EchoConsumer()));
@@ -83,17 +88,16 @@ public final class SSLEchoClient {
 	private static SSLContext getContext() throws Exception {
 		final char[] password = "password".toCharArray();
 
-		InputStream in;
 		// First initialize the key and trust material.
 		final KeyStore ksKeys = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksKeys.load(in, password);
-		in.close();
+		try (final InputStream in = SSLEchoClient.class.getResourceAsStream("nodes.jks")) {
+			ksKeys.load(in, password);
+		}
 
 		final KeyStore ksTrust = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksTrust.load(in, password);
-		in.close();
+		try (final InputStream in = SSLEchoClient.class.getResourceAsStream("nodes.jks")) {
+			ksTrust.load(in, password);
+		}
 
 		// KeyManager's decide which key material to use.
 		final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");

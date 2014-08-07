@@ -48,17 +48,28 @@ import net.dsys.snio.api.pool.SelectorThread;
  */
 final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 
+	@Nonnull
 	private final SelectorPool pool;
+	@Nonnull
 	private final Factory<MessageCodec> codecs;
+	@Nonnull
 	private final Factory<RateLimiter> limiters;
+	@Nonnull
 	private final Factory<MessageBufferProvider<ByteBuffer>> providers;
+	@Nonnull
 	private final int sendSize;
+	@Nonnull
 	private final int receiveSize;
+	@Nonnull
 	private final SSLContext context;
+	@Nonnull
 	private final SettableCallbackFuture<Void> bindFuture;
+	@Nonnull
 	private final SettableCallbackFuture<Void> closeFuture;
 
+	@Nonnull
 	private AcceptListener<ByteBuffer> accept;
+	@Nonnull
 	private CloseListener<ByteBuffer> close;
 	private SelectionKey acceptKey;
 
@@ -98,6 +109,8 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 		this.context = context;
 		this.bindFuture = new SettableCallbackFuture<>();
 		this.closeFuture = new SettableCallbackFuture<>();
+		this.accept = MessageChannels.dummyAcceptListener();
+		this.close = MessageChannels.dummyCloseListener();
 	}
 
 	/**
@@ -105,6 +118,9 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	 */
 	@Override
 	public void onAccept(final AcceptListener<ByteBuffer> listener) {
+		if (listener == null) {
+			throw new NullPointerException("listener == null");
+		}
 		this.accept = listener;
 	}
 
@@ -113,6 +129,9 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	 */
 	@Override
 	public void onClose(final CloseListener<ByteBuffer> listener) {
+		if (listener == null) {
+			throw new NullPointerException("listener == null");
+		}
 		this.close = listener;
 	}
 
@@ -129,6 +148,12 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 	 */
 	@Override
 	public void registered(final SelectorThread thread, final SelectionKey key) {
+		if (thread == null) {
+			throw new NullPointerException("thread == null");
+		}
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		this.acceptKey = key;
 		bindFuture.success(null);
 	}
@@ -158,9 +183,7 @@ final class SSLAcceptor implements KeyAcceptor<ByteBuffer> {
 			channel.close();
 			throw new IOException(e);
 		}
-		if (accept != null) {
-			accept.connectionAccepted(client.getRemoteAddress(), channel);
-		}
+		accept.connectionAccepted(client.getRemoteAddress(), channel);
 	}
 
 	/**

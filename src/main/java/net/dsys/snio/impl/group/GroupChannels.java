@@ -24,9 +24,6 @@ import javax.annotation.Nonnull;
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Copier;
 import net.dsys.commons.api.lang.Factory;
-import net.dsys.commons.impl.builder.Mandatory;
-import net.dsys.commons.impl.builder.OptionGroup;
-import net.dsys.commons.impl.builder.Optional;
 import net.dsys.commons.impl.lang.ByteBufferCopier;
 import net.dsys.commons.impl.lang.ByteBufferFactory;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
@@ -37,9 +34,9 @@ import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.buffer.BlockingQueueProvider;
 import net.dsys.snio.impl.buffer.RingBufferProvider;
 import net.dsys.snio.impl.channel.MessageChannels;
-import net.dsys.snio.impl.channel.MessageChannels.TCPChannelBuilder;
-import net.dsys.snio.impl.channel.builder.CommonBuilderData;
-import net.dsys.snio.impl.channel.builder.ServerBuilderData;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ClientConfig;
+import net.dsys.snio.impl.group.builder.GroupConfig;
 
 /**
  * @author Ricardo Padilha
@@ -52,6 +49,32 @@ public final class GroupChannels {
 	}
 
 	@Nonnull
+	public static GroupChannel<ByteBuffer> openTCPGroup(final ChannelConfig<ByteBuffer> common,
+			final GroupConfig group) throws IOException {
+		final Factory<MessageCodec> codecs = group.getMessageCodecs();
+		final Factory<RateLimiter> limiters = group.getRateLimiters();
+		final Factory<ByteBuffer> factory = new ByteBufferFactory(codecs.newInstance().getBodyLength());
+		final MessageBufferConsumer<ByteBuffer> consumer;
+		if (common.isRingBuffer()) {
+			consumer = RingBufferProvider.createConsumer(common.getCapacity(), factory);
+		} else {
+			consumer = BlockingQueueProvider.createConsumer(common.getCapacity(), factory);
+		}
+		final Copier<ByteBuffer> copier = new ByteBufferCopier();
+		final ChannelFactory<ByteBuffer> builder = new ChannelFactory<ByteBuffer>() {
+			@Override
+			public MessageChannel<ByteBuffer> open() throws IOException {
+				final ClientConfig client = new ClientConfig()
+					.setMessageCodec(codecs.newInstance())
+					.setRateLimiter(limiters.newInstance());
+				return MessageChannels.openTCPChannel(common, client);
+			}
+		};
+		final GroupChannel<ByteBuffer> channel = new GroupChannel<>(consumer, builder, copier);
+		channel.open(group.getSize());
+		return channel;
+	}
+
 	public static TCPGroupBuilder newTCPGroup() {
 		return new TCPGroupBuilder();
 	}
@@ -61,165 +84,144 @@ public final class GroupChannels {
 	 */
 	public static final class TCPGroupBuilder {
 
-		private final CommonBuilderData<ByteBuffer> common;
-		private final ServerBuilderData server;
-		private int size;
+		private final ChannelConfig<ByteBuffer> common;
+		private final GroupConfig group;
 
 		TCPGroupBuilder() {
-			this.common = new CommonBuilderData<>();
-			this.server = new ServerBuilderData();
+			this.common = new ChannelConfig<>();
+			this.group = new GroupConfig();
 		}
 
-		@Mandatory(restrictions = "pool != null")
+		/**
+		 * @see ChannelConfig#setPool(SelectorPool)
+		 */
 		public TCPGroupBuilder setPool(final SelectorPool pool) {
 			common.setPool(pool);
 			return this;
 		}
 
-		@Optional(defaultValue = "256", restrictions = "capacity > 0")
+		/**
+		 * @see ChannelConfig#setBufferCapacity(int)
+		 */
 		public TCPGroupBuilder setBufferCapacity(final int capacity) {
 			common.setBufferCapacity(capacity);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
+		/**
+		 * @see ChannelConfig#setSendBufferSize(int)
+		 */
 		public TCPGroupBuilder setSendBufferSize(final int sendBufferSize) {
 			common.setSendBufferSize(sendBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
+		/**
+		 * @see ChannelConfig#setReceiveBufferSize(int)
+		 */
 		public TCPGroupBuilder setReceiveBufferSize(final int receiveBufferSize) {
 			common.setReceiveBufferSize(receiveBufferSize);
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useHeapBuffer()")
+		/**
+		 * @see ChannelConfig#useDirectBuffer()
+		 */
 		public TCPGroupBuilder useDirectBuffer() {
 			common.useDirectBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useHeapBuffer()")
-		@OptionGroup(name = "bufferType", seeAlso = "useDirectBuffer()")
+		/**
+		 * @see ChannelConfig#useHeapBuffer()
+		 */
 		public TCPGroupBuilder useHeapBuffer() {
 			common.useHeapBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()", restrictions = "requires disruptor library")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useBlockingQueue()")
+		/**
+		 * @see ChannelConfig#useRingBuffer()
+		 */
 		public TCPGroupBuilder useRingBuffer() {
 			common.useRingBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useBlockingQueue()")
-		@OptionGroup(name = "bufferImplementation", seeAlso = "useRingBuffer()")
+		/**
+		 * @see ChannelConfig#useBlockingQueue()
+		 */
 		public TCPGroupBuilder useBlockingQueue() {
 			common.useBlockingQueue();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(consumer), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer()
+		 */
 		public TCPGroupBuilder useSingleInputBuffer() {
 			common.useSingleInputBuffer();
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()", restrictions = "consumer != null")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useMultipleInputBuffers()")
+		/**
+		 * @see ChannelConfig#useSingleInputBuffer(net.dsys.snio.api.buffer.MessageBufferConsumer)
+		 */
 		public TCPGroupBuilder useSingleInputBuffer(final MessageBufferConsumer<ByteBuffer> consumer) {
 			common.useSingleInputBuffer(consumer);
 			return this;
 		}
 
-		@Optional(defaultValue = "useMultipleInputBuffers()")
-		@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useSingleInputBuffer(consumer)")
+		/**
+		 * @see ChannelConfig#useMultipleInputBuffers()
+		 */
 		public TCPGroupBuilder useMultipleInputBuffers() {
 			common.useMultipleInputBuffers();
 			return this;
 		}
 
-		@Mandatory(restrictions = "codecs != null")
-		@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
+		/**
+		 * @see GroupConfig#setMessageCodec(Factory)
+		 */
 		public TCPGroupBuilder setMessageCodec(final Factory<MessageCodec> codecs) {
-			server.setMessageCodec(codecs);
+			group.setMessageCodec(codecs);
 			return this;
 		}
 
-		@Mandatory(restrictions = "length > 0")
-		@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codecs)")
+		/**
+		 * @see GroupConfig#setMessageLength(int)
+		 */
 		public TCPGroupBuilder setMessageLength(final int length) {
-			server.setMessageLength(length);
+			group.setMessageLength(length);
 			return this;
 		}
 
-		@Mandatory(restrictions = "limiters != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimit(value, unit)")
+		/**
+		 * @see GroupConfig#setRateLimiter(Factory)
+		 */
 		public TCPGroupBuilder setRateLimiter(final Factory<RateLimiter> limiters) {
-			server.setRateLimiter(limiters);
+			group.setRateLimiter(limiters);
 			return this;
 		}
 
-		@Mandatory(restrictions = "value >= 1 && unit != null")
-		@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiters)")
+		/**
+		 * @see GroupConfig#setRateLimit(long, BinaryUnit)
+		 */
 		public TCPGroupBuilder setRateLimit(final long value, final BinaryUnit unit) {
-			server.setRateLimit(value, unit);
+			group.setRateLimit(value, unit);
 			return this;
 		}
 
-		@Mandatory(restrictions = "size > 0")
+		/**
+		 * @see GroupConfig#setGroupSize(int)
+		 */
 		public TCPGroupBuilder setGroupSize(final int size) {
-			if (size < 1) {
-				throw new IllegalArgumentException("size < 1");
-			}
-			this.size = size;
+			group.setGroupSize(size);
 			return this;
 		}
 
 		public GroupChannel<ByteBuffer> open() throws IOException {
-			final SelectorPool pool = common.getPool();
-			final int capacity = common.getCapacity();
-			final int sendBufferSize = common.getSendBufferSize();
-			final int receiveBufferSize = common.getReceiveBufferSize();
-			final boolean directBuffer = common.isDirectBuffer();
-			final boolean ringBuffer = common.isRingBuffer();
-			final Factory<MessageCodec> codecs = server.getMessageCodecs();
-			final Factory<RateLimiter> limiters = server.getRateLimiters();
-			final Factory<ByteBuffer> factory = new ByteBufferFactory(codecs.newInstance().getBodyLength());
-			final MessageBufferConsumer<ByteBuffer> consumer;
-			if (common.isRingBuffer()) {
-				consumer = RingBufferProvider.createConsumer(common.getCapacity(), factory);
-			} else {
-				consumer = BlockingQueueProvider.createConsumer(common.getCapacity(), factory);
-			}
-			final Copier<ByteBuffer> copier = new ByteBufferCopier();
-			final ChannelFactory<ByteBuffer> builder = new ChannelFactory<ByteBuffer>() {
-				@Override
-				public MessageChannel<ByteBuffer> open() throws IOException {
-					final TCPChannelBuilder builder = MessageChannels.newTCPChannel();
-					builder.setPool(pool)
-							.setBufferCapacity(capacity)
-							.setSendBufferSize(sendBufferSize)
-							.setReceiveBufferSize(receiveBufferSize)
-							.setMessageCodec(codecs.newInstance())
-							.setRateLimiter(limiters.newInstance())
-							.useSingleInputBuffer(consumer);
-					if (directBuffer) {
-						builder.useDirectBuffer();
-					}
-					if (ringBuffer) {
-						builder.useRingBuffer();
-					}
-					return builder.open();
-				}
-			};
-			final GroupChannel<ByteBuffer> channel = new GroupChannel<>(consumer, builder, copier);
-			channel.open(size);
-			return channel;
+			return openTCPGroup(common, group);
 		}
 	}
 }

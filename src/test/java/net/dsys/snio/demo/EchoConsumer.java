@@ -65,12 +65,12 @@ public final class EchoConsumer implements MessageConsumer<ByteBuffer> {
 	 */
 	@Override
 	public void consume(final ByteBuffer message, final Object attachment) {
-		final int i = message.getInt();
-		message.clear();
 		// consistency checks
 		if (CHECK) {
+			final int i = message.getInt();
 			assert i == n + 1;
 		}
+		message.clear();
 		n++;
 		//System.out.println("< " + i);
 		counter++;

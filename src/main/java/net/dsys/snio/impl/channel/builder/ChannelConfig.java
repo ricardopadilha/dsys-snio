@@ -18,6 +18,9 @@ package net.dsys.snio.impl.channel.builder;
 
 import java.nio.ByteBuffer;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.Factory;
 import net.dsys.commons.impl.builder.Mandatory;
 import net.dsys.commons.impl.builder.OptionGroup;
@@ -33,7 +36,7 @@ import net.dsys.snio.impl.buffer.RingBufferProvider;
 /**
  * @author Ricardo Padilha
  */
-public final class CommonBuilderData<T> {
+public final class ChannelConfig<T> {
 
 	/**
 	 * Value obtained empirically on a 3rd gen Core i7. Lower values means
@@ -51,18 +54,20 @@ public final class CommonBuilderData<T> {
 	private boolean singleInputBuffer;
 	private MessageBufferConsumer<T> consumer;
 
-	public CommonBuilderData() {
-		capacity = DEFAULT_CAPACITY;
-		sendBufferSize = DEFAULT_BUFFER_SIZE;
-		receiveBufferSize = DEFAULT_BUFFER_SIZE;
-		useDirectBuffer = false;
-		useRingBuffer = false;
-		singleInputBuffer = false;
-		consumer = null;
+	public ChannelConfig() {
+		this.pool = null;
+		this.capacity = DEFAULT_CAPACITY;
+		this.sendBufferSize = DEFAULT_BUFFER_SIZE;
+		this.receiveBufferSize = DEFAULT_BUFFER_SIZE;
+		this.useDirectBuffer = false;
+		this.useRingBuffer = false;
+		this.singleInputBuffer = false;
+		this.consumer = null;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "pool != null")
-	public CommonBuilderData<T> setPool(final SelectorPool pool) {
+	public ChannelConfig<T> setPool(@Nonnull final SelectorPool pool) {
 		if (pool == null) {
 			throw new NullPointerException("pool == null");
 		}
@@ -70,8 +75,9 @@ public final class CommonBuilderData<T> {
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "256", restrictions = "capacity > 0")
-	public CommonBuilderData<T> setBufferCapacity(final int capacity) {
+	public ChannelConfig<T> setBufferCapacity(@Nonnegative final int capacity) {
 		if (capacity < 1) {
 			throw new IllegalArgumentException("capacity < 1");
 		}
@@ -79,8 +85,9 @@ public final class CommonBuilderData<T> {
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "0xFFFF", restrictions = "sendBufferSize > 0")
-	public CommonBuilderData<T> setSendBufferSize(final int sendBufferSize) {
+	public ChannelConfig<T> setSendBufferSize(@Nonnegative final int sendBufferSize) {
 		if (sendBufferSize < 1) {
 			throw new IllegalArgumentException("sendBufferSize < 1");
 		}
@@ -88,8 +95,9 @@ public final class CommonBuilderData<T> {
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "0xFFFF", restrictions = "receiveBufferSize > 0")
-	public CommonBuilderData<T> setReceiveBufferSize(final int receiveBufferSize) {
+	public ChannelConfig<T> setReceiveBufferSize(@Nonnegative final int receiveBufferSize) {
 		if (receiveBufferSize < 1) {
 			throw new IllegalArgumentException("receiveBufferSize < 1");
 		}
@@ -97,70 +105,87 @@ public final class CommonBuilderData<T> {
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useHeapBuffer()")
 	@OptionGroup(name = "bufferType", seeAlso = "useHeapBuffer()")
-	public CommonBuilderData<T> useDirectBuffer() {
+	public ChannelConfig<T> useDirectBuffer() {
 		this.useDirectBuffer = true;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useHeapBuffer()")
 	@OptionGroup(name = "bufferType", seeAlso = "useDirectBuffer()")
-	public CommonBuilderData<T> useHeapBuffer() {
+	public ChannelConfig<T> useHeapBuffer() {
 		this.useDirectBuffer = false;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useBlockingQueue()", restrictions = "requires disruptor library")
 	@OptionGroup(name = "bufferImplementation", seeAlso = "useBlockingQueue()")
-	public CommonBuilderData<T> useRingBuffer() {
+	public ChannelConfig<T> useRingBuffer() {
 		this.useRingBuffer = true;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useBlockingQueue()")
 	@OptionGroup(name = "bufferImplementation", seeAlso = "useRingBuffer()")
-	public CommonBuilderData<T> useBlockingQueue() {
+	public ChannelConfig<T> useBlockingQueue() {
 		this.useRingBuffer = false;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useMultipleInputBuffers()")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(consumer), useMultipleInputBuffers()")
-	public CommonBuilderData<T> useSingleInputBuffer() {
+	public ChannelConfig<T> useSingleInputBuffer() {
 		this.singleInputBuffer = true;
 		this.consumer = null;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useMultipleInputBuffers()", restrictions = "consumer != null")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useMultipleInputBuffers()")
-	public CommonBuilderData<T> useSingleInputBuffer(final MessageBufferConsumer<T> consumer) {
+	public ChannelConfig<T> useSingleInputBuffer(@Nonnull final MessageBufferConsumer<T> consumer) {
+		if (consumer == null) {
+			throw new NullPointerException("consumer == null");
+		}
 		this.singleInputBuffer = true;
 		this.consumer = consumer;
 		return this;
 	}
 
+	@Nonnull
 	@Optional(defaultValue = "useMultipleInputBuffers()")
 	@OptionGroup(name = "inputBuffer", seeAlso = "useSingleInputBuffer(), useSingleInputBuffer(consumer)")
-	public CommonBuilderData<T> useMultipleInputBuffers() {
+	public ChannelConfig<T> useMultipleInputBuffers() {
 		this.singleInputBuffer = false;
 		this.consumer = null;
 		return this;
 	}
 
+	@Nonnull
 	public SelectorPool getPool() {
+		if (pool == null) {
+			throw new IllegalStateException("pool is undefined");
+		}
 		return pool;
 	}
 
+	@Nonnegative
 	public int getCapacity() {
 		return capacity;
 	}
 
+	@Nonnegative
 	public int getSendBufferSize() {
 		return sendBufferSize;
 	}
 
+	@Nonnegative
 	public int getReceiveBufferSize() {
 		return receiveBufferSize;
 	}
@@ -169,7 +194,8 @@ public final class CommonBuilderData<T> {
 		return useDirectBuffer;
 	}
 
-	public Factory<ByteBuffer> getFactory(final int length) {
+	@Nonnull
+	public Factory<ByteBuffer> getFactory(@Nonnegative final int length) {
 		if (useDirectBuffer) {
 			return new DirectByteBufferFactory(length);
 		}
@@ -180,7 +206,8 @@ public final class CommonBuilderData<T> {
 		return useRingBuffer;
 	}
 
-	public MessageBufferProvider<T> getProvider(final Factory<T> factory) {
+	@Nonnull
+	public MessageBufferProvider<T> getProvider(@Nonnull final Factory<T> factory) {
 		final MessageBufferProvider<T> provider;
 		if (useRingBuffer) {
 			if (singleInputBuffer) {
@@ -188,9 +215,9 @@ public final class CommonBuilderData<T> {
 				if (cons == null) {
 					cons = RingBufferProvider.createConsumer(capacity, factory);
 				}
-				provider = new RingBufferProvider<>(capacity, factory, cons);
+				provider = RingBufferProvider.createProvider(capacity, factory, cons);
 			} else {
-				provider = new RingBufferProvider<>(capacity, factory);
+				provider = RingBufferProvider.createProvider(capacity, factory);
 			}
 		} else {
 			if (singleInputBuffer) {
@@ -198,15 +225,16 @@ public final class CommonBuilderData<T> {
 				if (cons == null) {
 					cons = BlockingQueueProvider.createConsumer(capacity, factory);
 				}
-				provider = new BlockingQueueProvider<>(capacity, factory, cons);
+				provider = RingBufferProvider.createProvider(capacity, factory, cons);
 			} else {
-				provider = new BlockingQueueProvider<>(capacity, factory);
+				provider = RingBufferProvider.createProvider(capacity, factory);
 			}
 		}
 		return provider;
 	}
 
-	public Factory<MessageBufferProvider<T>> getProviderFactory(final Factory<T> factory) {
+	@Nonnull
+	public Factory<MessageBufferProvider<T>> getProviderFactory(@Nonnull final Factory<T> factory) {
 		final Factory<MessageBufferProvider<T>> provider;
 		if (useRingBuffer) {
 			if (singleInputBuffer) {
@@ -214,9 +242,9 @@ public final class CommonBuilderData<T> {
 				if (cons == null) {
 					cons = RingBufferProvider.createConsumer(capacity, factory);
 				}
-				provider = RingBufferProvider.createFactory(capacity, factory, cons);
+				provider = RingBufferProvider.createProviderFactory(capacity, factory, cons);
 			} else {
-				provider = RingBufferProvider.createFactory(capacity, factory);
+				provider = RingBufferProvider.createProviderFactory(capacity, factory);
 			}
 		} else {
 			if (singleInputBuffer) {
@@ -224,9 +252,9 @@ public final class CommonBuilderData<T> {
 				if (cons == null) {
 					cons = BlockingQueueProvider.createConsumer(capacity, factory);
 				}
-				provider = BlockingQueueProvider.createFactory(capacity, factory, cons);
+				provider = BlockingQueueProvider.createProviderFactory(capacity, factory, cons);
 			} else {
-				provider = BlockingQueueProvider.createFactory(capacity, factory);
+				provider = BlockingQueueProvider.createProviderFactory(capacity, factory);
 			}
 		}
 		return provider;

@@ -91,7 +91,7 @@ final class BlockingBuffer<T> {
 	 * @see BlockingQueue#put(Object)
 	 */
 	void put(@Nonnull final Tuple<T> value) throws InterruptedException {
-		if (value == null || value.getValue() == null) {
+		if (value == null) {
 			throw new NullPointerException("value == null");
 		}
 		lock.lockInterruptibly();
@@ -219,15 +219,31 @@ final class BlockingBuffer<T> {
 		}
 	}
 
+	/**
+	 * @author Ricardo Padilha
+	 */
 	static final class Tuple<T> {
+
+		private static final Object DUMMY_ATTACHMENT = new Object();
+
 		private final T value;
 		private Object attachment;
 
 		Tuple(@Nonnull final T value) {
+			if (value == null) {
+				throw new NullPointerException("value == null");
+			}
 			this.value = value;
+			this.attachment = DUMMY_ATTACHMENT;
 		}
 
 		Tuple(@Nonnull final T value, @Nonnull final Object attachment) {
+			if (value == null) {
+				throw new NullPointerException("value == null");
+			}
+			if (attachment == null) {
+				throw new NullPointerException("attachment == null");
+			}
 			this.value = value;
 			this.attachment = attachment;
 		}

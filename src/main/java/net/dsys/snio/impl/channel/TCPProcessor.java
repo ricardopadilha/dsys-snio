@@ -40,12 +40,20 @@ import net.dsys.snio.api.limit.RateLimiter;
 final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 
 	private static final int NO_SEQUENCE = -1;
+	private static final ByteBuffer DUMMY_BUFFER = ByteBuffer.allocate(0);
 
+	@Nonnull
 	private final MessageCodec codec;
+	@Nonnull
 	private final RateLimiter limiter;
+	@Nonnegative
 	private final int sendSize;
+	@Nonnegative
 	private final int receiveSize;
+
+	@Nonnull
 	private ByteBuffer receiveBuffer;
+	@Nonnull
 	private ByteBuffer sendBuffer;
 	private long writeSequence;
 
@@ -75,6 +83,8 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 		this.limiter = limiter;
 		this.sendSize = sendSize;
 		this.receiveSize = receiveSize;
+		this.receiveBuffer = DUMMY_BUFFER; // will be replaced once processor is registered
+		this.sendBuffer = DUMMY_BUFFER; // will be replaced once processor is registered
 		this.writeSequence = NO_SEQUENCE;
 	}
 
@@ -102,6 +112,9 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void readRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		this.receiveBuffer = ByteBuffer.allocateDirect(receiveSize);
 	}
 
@@ -110,6 +123,9 @@ final class TCPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void writeRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		this.sendBuffer = ByteBuffer.allocateDirect(sendSize);
 	}
 

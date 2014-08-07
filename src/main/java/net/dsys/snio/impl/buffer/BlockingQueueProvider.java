@@ -40,7 +40,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 	private final MessageBufferConsumer<T> appIn; // app consumer
 	private final boolean internalConsumer;
 
-	public BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
+	BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 		this.out = new BlockingBuffer<>(capacity);
 		this.in = new BlockingBuffer<>(capacity);
 		this.appOut = new BlockingQueueProducer<>(out, factory);
@@ -50,7 +50,7 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 		this.internalConsumer = true;
 	}
 
-	public BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+	BlockingQueueProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
 			@Nonnull final MessageBufferConsumer<T> consumer) {
 		if (consumer == null) {
 			throw new NullPointerException("appIn == null");
@@ -116,12 +116,22 @@ public final class BlockingQueueProvider<T> implements MessageBufferProvider<T> 
 		return consumer;
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(final int capacity, final Factory<T> factory) {
+	public static <T> MessageBufferProvider<T> createProvider(final int capacity, final Factory<T> factory) {
+		return new BlockingQueueProvider<>(capacity, factory);
+	}
+
+	public static <T> Factory<MessageBufferProvider<T>> createProviderFactory(final int capacity,
+			final Factory<T> factory) {
 		return new ProviderFactory<>(capacity, factory);
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(final int capacity, final Factory<T> factory,
-			final MessageBufferConsumer<T> consumer) {
+	public static <T> MessageBufferProvider<T> createProvider(final int capacity,
+			final Factory<T> factory, final MessageBufferConsumer<T> consumer) {
+		return new BlockingQueueProvider<>(capacity, factory, consumer);
+	}
+
+	public static <T> Factory<MessageBufferProvider<T>> createProviderFactory(final int capacity,
+			final Factory<T> factory, final MessageBufferConsumer<T> consumer) {
 		return new ProviderFactory<>(capacity, factory, consumer);
 	}
 

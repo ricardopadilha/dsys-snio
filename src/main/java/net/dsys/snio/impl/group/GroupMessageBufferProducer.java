@@ -33,8 +33,10 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 
 	private static final int INITIAL_SEQUENCE_VALUE = -1;
 
+	@Nonnull
 	private final Copier<T> copier;
-	private final MessageBufferProducer<T>[] buffers;
+	@Nonnull
+	private final List<MessageBufferProducer<T>> buffers;
 	private long last;
 
 	GroupMessageBufferProducer(@Nonnull final Copier<T> copier,
@@ -49,9 +51,7 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 			throw new IllegalArgumentException("buffers.isEmpty()");
 		}
 		this.copier = copier;
-		@SuppressWarnings("unchecked")
-		final MessageBufferProducer<T>[] bs = buffers.toArray(new MessageBufferProducer[0]);
-		this.buffers = bs;
+		this.buffers = new ArrayList<>(buffers);
 		this.last = INITIAL_SEQUENCE_VALUE;
 	}
 
@@ -108,7 +108,7 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 	 */
 	@Override
 	public T get(final long sequence) {
-		return buffers[0].get(sequence);
+		return buffers.get(0).get(sequence);
 	}
 
 	/**
@@ -118,12 +118,12 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 	public void attach(final long sequence, final Object attachment) {
 		if (attachment instanceof GroupData) {
 			final GroupData<?> data = (GroupData<?>) attachment;
-			if (buffers.length != data.size()) {
-				throw new IllegalArgumentException("buffers.length != data.size()");
+			if (buffers.size() != data.size()) {
+				throw new IllegalArgumentException("buffers.size() != data.size()");
 			}
-			final int k = buffers.length;
+			final int k = buffers.size();
 			for (int i = 0; i < k; i++) {
-				buffers[i].attach(sequence, data.get(i));
+				buffers.get(i).attach(sequence, data.get(i));
 			}
 		} else {
 			for (final MessageBufferProducer<T> buffer : buffers) {
@@ -137,11 +137,11 @@ final class GroupMessageBufferProducer<T> implements MessageBufferProducer<T> {
 	 */
 	@Override
 	public void release(final long sequence) throws InterruptedException {
-		final int k = buffers.length;
+		final int k = buffers.size();
 		for (long s = last + 1; s <= sequence; s++) {
-			final T in = buffers[0].get(s);
+			final T in = buffers.get(0).get(s);
 			for (int i = 1; i < k; i++) {
-				final T out = buffers[i].get(s);
+				final T out = buffers.get(i).get(s);
 				copier.copy(in, out);
 			}
 		}

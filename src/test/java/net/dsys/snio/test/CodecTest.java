@@ -50,11 +50,12 @@ public final class CodecTest {
 	}
 
 	static void testCodec(final MessageCodec codec, final int length, final Random rnd) throws Exception {
+		final int maxSingleAllocLength = 500_000;
 		final int len = 2 * length + codec.getFrameLength();
 		final ByteBuffer hin;
 		final ByteBuffer hout;
 		final ByteBuffer htemp;
-		if (len < 0 || len > 500_000) {
+		if (len < 0 || len > maxSingleAllocLength) {
 			hin = ByteBuffer.allocate(length);
 			hout = ByteBuffer.allocate(length);
 			htemp = ByteBuffer.allocate(codec.getFrameLength());
@@ -79,7 +80,7 @@ public final class CodecTest {
 		final ByteBuffer din;
 		final ByteBuffer dout;
 		final ByteBuffer dtemp;
-		if (len < 0 || len > 500_000) {
+		if (len < 0 || len > maxSingleAllocLength) {
 			din = ByteBuffer.allocateDirect(length);
 			dout = ByteBuffer.allocateDirect(length);
 			dtemp = ByteBuffer.allocateDirect(codec.getFrameLength());
@@ -167,7 +168,8 @@ public final class CodecTest {
 	public void testLengthHeader() throws Exception {
 		final MessageCodec codec = Codecs.getDefault(65531);
 		edgeTest(codec, 0, codec.getBodyLength() + 1);
-		testCodec(1_000_000, new CodecFactory() { // arbitrarily limit to 1MB
+		final int maxLength = 1_000_000; // arbitrarily limit to 1MB
+		testCodec(maxLength, new CodecFactory() {
 			@Override
 			public MessageCodec newInstance(final int length) {
 				return Codecs.getDefault(length);

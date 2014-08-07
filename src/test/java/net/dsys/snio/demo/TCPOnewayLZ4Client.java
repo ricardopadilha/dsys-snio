@@ -27,6 +27,8 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ClientConfig;
 import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
@@ -49,17 +51,18 @@ public final class TCPOnewayLZ4Client {
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
 
-		final MessageChannel<ByteBuffer> client = MessageChannels.newTCPChannel()
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
-				.setMessageCodec(Codecs.getLZ4Compression(length))
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ClientConfig client = new ClientConfig()
+				.setMessageCodec(Codecs.getLZ4Compression(length));
+		final MessageChannel<ByteBuffer> channel = MessageChannels.openTCPChannel(common, client);
 
-		client.connect(new InetSocketAddress(host, port));
-		client.getConnectFuture().get();
+		channel.connect(new InetSocketAddress(host, port));
+		channel.getConnectFuture().get();
 
 		final ExecutorService executor = Executors.newCachedThreadPool();
-		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
+		final MessageBufferProducer<ByteBuffer> out = channel.getOutputBuffer();
 		executor.execute(MessageHandlers.syncProducer(out, new EchoProducer()));
 
 		pool.getCloseFuture().get();

@@ -40,8 +40,11 @@ import net.dsys.snio.api.group.GroupSocketAddress;
  */
 final class GroupChannel<T> implements MessageChannel<T> {
 
+	@Nonnull
 	private final MessageBufferConsumer<T> in;
+	@Nonnull
 	private final ChannelFactory<T> factory;
+	@Nonnull
 	private final Copier<T> copier;
 
 	private MessageChannel<T>[] channels;
@@ -67,17 +70,6 @@ final class GroupChannel<T> implements MessageChannel<T> {
 		this.copier = copier;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public MessageChannel<T> onClose(final CloseListener<T> listener) {
-		for (final MessageChannel<T> channel : channels) {
-			channel.onClose(listener);
-		}
-		return this;
-	}
-
 	void open(@Nonnegative final int size) throws IOException {
 		if (channels != null) {
 			return;
@@ -88,6 +80,20 @@ final class GroupChannel<T> implements MessageChannel<T> {
 			channels[i] = factory.open();
 		}
 		this.channels = channels;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public MessageChannel<T> onClose(final CloseListener<T> listener) {
+		if (listener == null) {
+			throw new NullPointerException("listener == null");
+		}
+		for (final MessageChannel<T> channel : channels) {
+			channel.onClose(listener);
+		}
+		return this;
 	}
 
 	/**

@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -30,15 +29,10 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.KeyStore;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import net.dsys.commons.impl.future.SettableFuture;
 import net.dsys.snio.api.buffer.MessageBufferConsumer;
@@ -46,9 +40,13 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.channel.MessageServerChannel;
 import net.dsys.snio.api.pool.SelectorPool;
-import net.dsys.snio.demo.SSLEchoClient;
+import net.dsys.snio.demo.DemoSSLContext;
 import net.dsys.snio.impl.channel.MessageChannels;
 import net.dsys.snio.impl.channel.MessageServerChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ClientConfig;
+import net.dsys.snio.impl.channel.builder.SSLConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 import net.dsys.snio.impl.pool.SelectorPools;
 
 import org.junit.After;
@@ -60,11 +58,14 @@ public final class CloseTest {
 	private static final int SEC = 1_000_000_000;
 	private static final int CAPACITY = 1;
 	private static final int LENGTH = 8;
-	private static final int PORT = 65535;
+	private static final int PORT = 64535;
 
 	private AtomicInteger atomicPort = new AtomicInteger(PORT);
 	private SelectorPool pool;
-	private SSLContext context;
+	private ChannelConfig<ByteBuffer> common;
+	private ClientConfig client;
+	private ServerConfig server;
+	private SSLConfig ssl;
 
 	public CloseTest() {
 		super();
@@ -73,47 +74,26 @@ public final class CloseTest {
 	@Before
 	public void setUp() throws Exception {
 		pool = SelectorPools.open("test", 1);
-		context = getContext();
+		common = new ChannelConfig<ByteBuffer>()
+				.setPool(pool)
+				.setBufferCapacity(CAPACITY);
+		client = new ClientConfig().setMessageLength(LENGTH);
+		server = new ServerConfig().setMessageLength(LENGTH);
+		ssl = new SSLConfig().setContext(DemoSSLContext.getDemoContext());
 	}
 
 	@After
 	public void tearDown() throws Exception {
+		assert pool != null;
 		if (pool.isOpen()) {
 			pool.close();
 			pool.getCloseFuture().get();
 		}
 	}
 
-	private static SSLContext getContext() throws Exception {
-		final char[] password = "password".toCharArray();
-
-		InputStream in;
-		// First initialize the key and trust material.
-		final KeyStore ksKeys = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksKeys.load(in, password);
-		in.close();
-
-		final KeyStore ksTrust = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksTrust.load(in, password);
-		in.close();
-
-		// KeyManager's decide which key material to use.
-		final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-		kmf.init(ksKeys, password);
-
-		// TrustManager's decide whether to allow connections.
-		final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-		tmf.init(ksTrust);
-
-		final SSLContext context = SSLContext.getInstance("TLS");
-		context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-		return context;
-	}
-
 	@Test
 	public void testClosePool() throws InterruptedException, ExecutionException, IOException {
+		assert pool != null;
 		assertTrue(pool.isOpen());
 		pool.close();
 		pool.getCloseFuture().get();
@@ -150,43 +130,25 @@ public final class CloseTest {
 
 	@Test
 	public void testClosePoolThenChannelTCP() throws Exception {
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		testClosePoolThenChannel(pool, channel);
 	}
 
 	@Test
 	public void testCloseChannelThenPoolTCP() throws Exception {
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		testCloseChannelThenPool(pool, channel);
 	}
 
 	@Test
 	public void testClosePoolThenChannelSSL() throws Exception {
-		final MessageChannel<?> channel = MessageChannels.newSSLChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openSSLChannel(common, client, ssl);
 		testClosePoolThenChannel(pool, channel);
 	}
 
 	@Test
 	public void testCloseChannelThenPoolSSL() throws Exception {
-		final MessageChannel<?> channel = MessageChannels.newSSLChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openSSLChannel(common, client, ssl);
 		testCloseChannelThenPool(pool, channel);
 	}
 
@@ -220,21 +182,13 @@ public final class CloseTest {
 
 	@Test
 	public void testClosePoolThenServerChannelTCP() throws Exception {
-		final MessageServerChannel<?> channel = MessageServerChannels.newTCPServerChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageServerChannel<?> channel = MessageServerChannels.openTCPServerChannel(common, server);
 		testClosePoolThenChannel(pool, channel);
 	}
 
 	@Test
 	public void testCloseServerChannelThenPoolTCP() throws Exception {
-		final MessageServerChannel<?> channel = MessageServerChannels.newTCPServerChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageServerChannel<?> channel = MessageServerChannels.openTCPServerChannel(common, server);
 		testCloseChannelThenPool(pool, channel);
 	}
 
@@ -243,11 +197,7 @@ public final class CloseTest {
 		final int port = atomicPort.getAndDecrement();
 		final InetSocketAddress local = new InetSocketAddress(port);
 
-		final MessageServerChannel<?> channel = MessageServerChannels.newTCPServerChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageServerChannel<?> channel = MessageServerChannels.openTCPServerChannel(common, server);
 		assertTrue(channel.isOpen());
 		try {
 			channel.bind(local);
@@ -268,12 +218,7 @@ public final class CloseTest {
 		final int port = atomicPort.getAndDecrement();
 		final InetSocketAddress local = new InetSocketAddress(port);
 
-		final MessageServerChannel<?> channel = MessageServerChannels.newSSLServerChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageServerChannel<?> channel = MessageServerChannels.openSSLServerChannel(common, server, ssl);
 		assertTrue(channel.isOpen());
 		try {
 			channel.bind(local);
@@ -303,11 +248,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		try {
 			channel.bind(local);
 			channel.getBindFuture().get();
@@ -336,12 +277,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<?> channel = MessageChannels.newSSLChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openSSLChannel(common, client, ssl);
 		try {
 			channel.bind(local);
 			channel.getBindFuture().get();
@@ -373,11 +309,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		assertTrue(channel.isOpen());
 		channel.connect(remote);
 
@@ -401,12 +333,7 @@ public final class CloseTest {
 		final InetSocketAddress local = new InetSocketAddress(port);
 		final InetSocketAddress remote = new InetSocketAddress(addr, port);
 
-		final MessageServerChannel<?> server = MessageServerChannels.newSSLServerChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageServerChannel<?> server = MessageServerChannels.openSSLServerChannel(common, this.server, ssl);
 		try {
 			server.bind(local);
 			server.getBindFuture().get();
@@ -416,12 +343,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<?> client = MessageChannels.newSSLChannel()
-				.setContext(context)
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> client = MessageChannels.openSSLChannel(common, this.client, ssl);
 		assertTrue(client.isOpen());
 		client.connect(remote);
 		client.getConnectFuture().get();
@@ -442,11 +364,7 @@ public final class CloseTest {
 		final int port = atomicPort.getAndDecrement();
 		final InetSocketAddress remote = new InetSocketAddress(addr, port);
 
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		assertTrue(channel.isOpen());
 		channel.connect(remote);
 		try {
@@ -479,11 +397,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<?> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<?> channel = MessageChannels.openTCPChannel(common, client);
 		assertTrue(channel.isOpen());
 		channel.connect(remote);
 
@@ -518,11 +432,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<ByteBuffer> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<ByteBuffer> channel = MessageChannels.openTCPChannel(common, client);
 		assertTrue(channel.isOpen());
 		channel.connect(remote);
 
@@ -541,7 +451,7 @@ public final class CloseTest {
 					latch.await();
 					out.acquire();
 					future.fail(new AssertionError("able to acquire despite remote endpoint being closed"));
-				} catch (final Exception e) {
+				} catch (final InterruptedException e) {
 					future.success(null);
 				}
 			}
@@ -581,11 +491,7 @@ public final class CloseTest {
 			return;
 		}
 
-		final MessageChannel<ByteBuffer> channel = MessageChannels.newTCPChannel()
-				.setPool(pool)
-				.setBufferCapacity(CAPACITY)
-				.setMessageLength(LENGTH)
-				.open();
+		final MessageChannel<ByteBuffer> channel = MessageChannels.openTCPChannel(common, client);
 		assertTrue(channel.isOpen());
 		channel.connect(remote);
 
@@ -602,7 +508,7 @@ public final class CloseTest {
 					final MessageBufferConsumer<ByteBuffer> in = channel.getInputBuffer();
 					in.acquire();
 					future.fail(new AssertionError("able to acquire despite remote endpoint being closed"));
-				} catch (final Exception e) {
+				} catch (final InterruptedException e) {
 					future.success(null);
 				}
 			}

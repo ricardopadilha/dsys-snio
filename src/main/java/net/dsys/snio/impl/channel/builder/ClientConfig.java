@@ -16,6 +16,9 @@
 
 package net.dsys.snio.impl.channel.builder;
 
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.impl.builder.Mandatory;
 import net.dsys.commons.impl.builder.OptionGroup;
@@ -27,19 +30,20 @@ import net.dsys.snio.impl.limit.RateLimiters;
 /**
  * @author Ricardo Padilha
  */
-public final class ClientBuilderData {
+public final class ClientConfig {
 
 	private MessageCodec codec;
 	private RateLimiter limiter;
 
-	public ClientBuilderData() {
+	public ClientConfig() {
 		codec = null;
 		limiter = RateLimiters.noRateLimit();
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "codec != null")
 	@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
-	public ClientBuilderData setMessageCodec(final MessageCodec codec) {
+	public ClientConfig setMessageCodec(@Nonnull final MessageCodec codec) {
 		if (codec == null) {
 			throw new NullPointerException("codec == null");
 		}
@@ -47,9 +51,10 @@ public final class ClientBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "length > 0")
 	@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codec)")
-	public ClientBuilderData setMessageLength(final int length) {
+	public ClientConfig setMessageLength(@Nonnegative final int length) {
 		if (length < 1) {
 			throw new IllegalArgumentException("length < 1");
 		}
@@ -57,9 +62,10 @@ public final class ClientBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "limiter != null")
 	@OptionGroup(name = "limiter", seeAlso = "setRateLimit(value, unit)")
-	public ClientBuilderData setRateLimiter(final RateLimiter limiter) {
+	public ClientConfig setRateLimiter(@Nonnull final RateLimiter limiter) {
 		if (limiter == null) {
 			throw new NullPointerException("limiter == null");
 		}
@@ -67,18 +73,27 @@ public final class ClientBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "value >= 1 && unit != null")
 	@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiter)")
-	public ClientBuilderData setRateLimit(final long value, final BinaryUnit unit) {
+	public ClientConfig setRateLimit(@Nonnegative final long value, @Nonnull final BinaryUnit unit) {
 		this.limiter = RateLimiters.limit(value, unit);
 		return this;
 	}
 
+	@Nonnull
 	public MessageCodec getMessageCodec() {
+		if (codec == null) {
+			throw new IllegalStateException("message codec undefined");
+		}
 		return codec;
 	}
 
+	@Nonnull
 	public RateLimiter getRateLimiter() {
+		if (limiter == null) {
+			throw new IllegalStateException("rate limiter undefined");
+		}
 		return limiter;
 	}
 

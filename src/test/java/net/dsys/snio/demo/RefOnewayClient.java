@@ -46,7 +46,7 @@ public final class RefOnewayClient {
 		client.connect(new InetSocketAddress(host, port));
 
 		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
-		executor.submit(createClient(client, length));
+		executor.execute(createClient(client, length));
 
 		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
 		executor.shutdown();

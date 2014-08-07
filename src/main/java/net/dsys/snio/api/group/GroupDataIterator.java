@@ -17,6 +17,7 @@
 package net.dsys.snio.api.group;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import javax.annotation.Nonnull;
 
@@ -25,6 +26,7 @@ import javax.annotation.Nonnull;
  */
 public final class GroupDataIterator<T> implements Iterator<T> {
 
+	@Nonnull
 	private final GroupData<T> data;
 	private final int k;
 	private int i;
@@ -34,8 +36,8 @@ public final class GroupDataIterator<T> implements Iterator<T> {
 			throw new NullPointerException("data == null");
 		}
 		this.data = data;
-		this.k = data.size() - 1;
-		this.i = -1;
+		this.k = data.size();
+		this.i = 0;
 	}
 
 	/**
@@ -50,9 +52,13 @@ public final class GroupDataIterator<T> implements Iterator<T> {
 	 * {@inheritDoc}
 	 */
 	@Override
-	@Nonnull
 	public T next() {
-		return data.get(++i);
+		if (i == k) {
+			throw new NoSuchElementException();
+		}
+		final T next = data.get(i);
+		i++;
+		return next;
 	}
 
 	/**

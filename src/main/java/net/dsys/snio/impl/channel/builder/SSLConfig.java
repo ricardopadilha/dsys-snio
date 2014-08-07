@@ -14,28 +14,39 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.api.group;
+package net.dsys.snio.impl.channel.builder;
 
-import java.util.NoSuchElementException;
-
-import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLContext;
+
+import net.dsys.commons.impl.builder.Mandatory;
 
 /**
  * @author Ricardo Padilha
  */
-public interface GroupData<T> extends Iterable<T> {
+public final class SSLConfig {
 
-	/**
-	 * @return the size of this group data.
-	 */
-	@Nonnegative
-	int size();
+	private SSLContext context;
 
-	/**
-	 * @throws NoSuchElementException if there is no data for the given index.
-	 */
+	public SSLConfig() {
+		this.context = null;
+	}
+
 	@Nonnull
-	T get(@Nonnegative int index);
+	@Mandatory(restrictions = "context != null")
+	public SSLConfig setContext(@Nonnull final SSLContext context) {
+		if (context == null) {
+			throw new NullPointerException("context == null");
+		}
+		this.context = context;
+		return this;
+	}
 
+	@Nonnull
+	public SSLContext getContext() {
+		if (context == null) {
+			throw new IllegalStateException("SSL context undefined");
+		}
+		return context;
+	}
 }

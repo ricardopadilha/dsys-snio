@@ -28,6 +28,8 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ClientConfig;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -48,17 +50,18 @@ public final class UDPEchoServer {
 		final int port = Integer.parseInt(getArg("port", "12345", args));
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
-		final MessageChannel<ByteBuffer> server = MessageChannels.newUDPChannel()
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
-				.setMessageLength(length)
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ClientConfig server = new ClientConfig()
+				.setMessageLength(length);
+		final MessageChannel<ByteBuffer> channel = MessageChannels.openUDPChannel(common, server);
 
-		server.bind(new InetSocketAddress(port));
-		server.getBindFuture().get();
+		channel.bind(new InetSocketAddress(port));
+		channel.getBindFuture().get();
 
-		final MessageBufferConsumer<ByteBuffer> in = server.getInputBuffer();
-		final MessageBufferProducer<ByteBuffer> out = server.getOutputBuffer();
+		final MessageBufferConsumer<ByteBuffer> in = channel.getInputBuffer();
+		final MessageBufferProducer<ByteBuffer> out = channel.getOutputBuffer();
 
 		// one thread per client
 		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!

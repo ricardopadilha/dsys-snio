@@ -25,6 +25,8 @@ import net.dsys.snio.api.channel.MessageServerChannel;
 import net.dsys.snio.api.handler.MessageHandler;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageServerChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -47,18 +49,19 @@ public final class GroupEchoServer {
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
+				.setPool(pool)
+				.useRingBuffer();
+		final ServerConfig server = new ServerConfig()
+				.setMessageLength(length);
 		for (int i = 0; i < servers; i++) {
-			final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
-					.setPool(pool)
-					.setMessageLength(length)
-					.useRingBuffer()
-					.open();
+			final MessageServerChannel<ByteBuffer> channel = MessageServerChannels.openTCPServerChannel(common, server);
 			final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
 					.useSingleConsumer(new EchoServer())
 					.build();
-			server.onAccept(handler.getAcceptListener());
-			server.bind(new InetSocketAddress(port + i));
-			server.getBindFuture().get();
+			channel.onAccept(handler.getAcceptListener());
+			channel.bind(new InetSocketAddress(port + i));
+			channel.getBindFuture().get();
 		}
 
 		pool.getCloseFuture().get();

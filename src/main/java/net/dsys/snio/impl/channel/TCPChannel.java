@@ -41,8 +41,11 @@ import net.dsys.snio.api.pool.SelectorExecutor;
  */
 final class TCPChannel<T> implements MessageChannel<T>, Processor {
 
+	@Nonnull
 	private final SelectorExecutor selector;
+	@Nonnull
 	private final KeyProcessor<T> processor;
+	@Nonnull
 	private CloseListener<T> close;
 	private SocketChannel channel;
 
@@ -60,7 +63,7 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 		this.selector = selector;
 		this.processor = processor;
 		this.channel = null;
-		this.close = null;
+		this.close = MessageChannels.dummyCloseListener();
 	}
 
 	/**
@@ -101,6 +104,9 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 	 */
 	@Override
 	public MessageChannel<T> onClose(final CloseListener<T> listener) {
+		if (listener == null) {
+			throw new NullPointerException("listener == null");
+		}
 		this.close = listener;
 		return this;
 	}
@@ -213,9 +219,7 @@ final class TCPChannel<T> implements MessageChannel<T>, Processor {
 				if (channel != null) {
 					channel.close();
 				}
-				if (close != null) {
-					close.connectionClosed(TCPChannel.this);
-				}
+				close.connectionClosed(TCPChannel.this);
 				return null;
 			}
 		};

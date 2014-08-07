@@ -25,6 +25,8 @@ import net.dsys.snio.api.channel.MessageServerChannel;
 import net.dsys.snio.api.handler.MessageHandler;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageServerChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -46,20 +48,21 @@ public final class TCPEchoServer {
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 
-		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
-				.setMessageLength(length)
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ServerConfig server = new ServerConfig()
+				.setMessageLength(length);
+		final MessageServerChannel<ByteBuffer> channel = MessageServerChannels.openTCPServerChannel(common, server);
 
 		// one thread per client
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
 				.useManyConsumers(EchoServer.createFactory())
 				.build();
 
-		server.onAccept(handler.getAcceptListener());
-		server.bind(new InetSocketAddress(port));
-		server.getBindFuture().get();
+		channel.onAccept(handler.getAcceptListener());
+		channel.bind(new InetSocketAddress(port));
+		channel.getBindFuture().get();
 
 		pool.getCloseFuture().get();
 	}

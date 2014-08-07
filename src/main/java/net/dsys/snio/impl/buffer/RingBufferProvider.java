@@ -47,7 +47,7 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 	private final MessageBufferConsumer<T> appIn; // app consumer
 	private final boolean internalConsumer;
 
-	public RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
+	RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory) {
 		this.waitOut = new WakeupWaitStrategy();
 		this.waitIn = new BlockingWaitStrategy();
 		final EventFactory<T> evfactory = wrapFactory(factory);
@@ -62,7 +62,7 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		this.internalConsumer = true;
 	}
 
-	public RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
+	RingBufferProvider(@Nonnegative final int capacity, @Nonnull final Factory<T> factory,
 			@Nonnull final MessageBufferConsumer<T> appIn) {
 		if (appIn == null) {
 			throw new NullPointerException("appIn == null");
@@ -151,12 +151,22 @@ public final class RingBufferProvider<T> implements MessageBufferProvider<T> {
 		return consumer;
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(@Nonnegative final int capacity,
+	public static <T> MessageBufferProvider<T> createProvider(@Nonnegative final int capacity,
+			@Nonnull final Factory<T> factory) {
+		return new RingBufferProvider<>(capacity, factory);
+	}
+
+	public static <T> Factory<MessageBufferProvider<T>> createProviderFactory(@Nonnegative final int capacity,
 			@Nonnull final Factory<T> factory) {
 		return new ProviderFactory<>(capacity, factory);
 	}
 
-	public static <T> Factory<MessageBufferProvider<T>> createFactory(@Nonnegative final int capacity,
+	public static <T> MessageBufferProvider<T> createProvider(@Nonnegative final int capacity,
+			@Nonnull final Factory<T> factory, @Nonnull final MessageBufferConsumer<T> consumer) {
+		return new RingBufferProvider<>(capacity, factory, consumer);
+	}
+
+	public static <T> Factory<MessageBufferProvider<T>> createProviderFactory(@Nonnegative final int capacity,
 			@Nonnull final Factory<T> factory, @Nonnull final MessageBufferConsumer<T> consumer) {
 		return new ProviderFactory<>(capacity, factory, consumer);
 	}

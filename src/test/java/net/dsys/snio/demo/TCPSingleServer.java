@@ -28,6 +28,8 @@ import net.dsys.snio.api.handler.MessageHandler;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.buffer.RingBufferProvider;
 import net.dsys.snio.impl.channel.MessageServerChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -52,22 +54,23 @@ public final class TCPSingleServer {
 		final SelectorPool pool = SelectorPools.open("server", threads);
 		final MessageBufferConsumer<ByteBuffer> input = RingBufferProvider.createConsumer(buffers,
 				new ByteBufferFactory(length));
-		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newTCPServerChannel()
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
 				.setBufferCapacity(buffers)
-				.setMessageLength(length)
 				.useSingleInputBuffer(input)
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ServerConfig server = new ServerConfig()
+				.setMessageLength(length);
+		final MessageServerChannel<ByteBuffer> channel = MessageServerChannels.openTCPServerChannel(common, server);
 
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
 				//.useDecoupledProcessing(length)
 				.useSingleConsumer(new EchoServer())
 				.build();
 
-		server.onAccept(handler.getAcceptListener());
-		server.bind(new InetSocketAddress(port));
-		server.getBindFuture().get();
+		channel.onAccept(handler.getAcceptListener());
+		channel.bind(new InetSocketAddress(port));
+		channel.getBindFuture().get();
 
 		pool.getCloseFuture().get();
 	}

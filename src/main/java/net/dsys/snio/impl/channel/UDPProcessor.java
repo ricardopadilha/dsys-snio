@@ -40,10 +40,16 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	private static final int MAX_DATAGRAM_LENGTH = 0xFFFF;
 	private static final int DATAGRAM_HEADER_LENGTH = 8;
 	private static final int MAX_DATAGRAM_PAYLOAD = MAX_DATAGRAM_LENGTH - DATAGRAM_HEADER_LENGTH;
+	private static final ByteBuffer DUMMY_BUFFER = ByteBuffer.allocate(0);
 
+	@Nonnull
 	private final MessageCodec codec;
+	@Nonnull
 	private final RateLimiter limiter;
+
+	@Nonnull
 	private ByteBuffer receiveBuffer;
+	@Nonnull
 	private ByteBuffer sendBuffer;
 
 	UDPProcessor(@Nonnull final MessageCodec codec,
@@ -61,6 +67,8 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 		}
 		this.codec = codec;
 		this.limiter = limiter;
+		this.receiveBuffer = DUMMY_BUFFER; // will be replaced once processor is registered
+		this.sendBuffer = DUMMY_BUFFER; // will be replaced once processor is registered
 	}
 
 	/**
@@ -68,6 +76,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	public void connect(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		throw new UnsupportedOperationException("void connect(final SelectionKey key)");
 	}
 
@@ -76,6 +87,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void readRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		this.receiveBuffer = ByteBuffer.allocateDirect(MAX_DATAGRAM_LENGTH);
 	}
 
@@ -84,6 +98,9 @@ final class UDPProcessor extends AbstractProcessor<ByteBuffer> {
 	 */
 	@Override
 	protected void writeRegistered(final SelectionKey key) {
+		if (key == null) {
+			throw new NullPointerException("key == null");
+		}
 		this.sendBuffer = ByteBuffer.allocateDirect(MAX_DATAGRAM_LENGTH);
 		// start the sendBuffer as empty to ensure the writerKey is disabled
 		sendBuffer.flip();

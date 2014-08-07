@@ -17,6 +17,7 @@
 package net.dsys.snio.impl.pool;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
@@ -76,13 +77,6 @@ final class SelectorThreadImpl implements SelectorThread {
 		this.closeFuture = new SettableCallbackFuture<>();
 	}
 
-	private void queueOp(@Nonnull final IOOperation op) {
-		ops.offer(op);
-		if (newOps.compareAndSet(false, true)) {
-			selector.wakeup();
-		}
-	}
-
 	void open() throws IOException {
 		if (selector != null) {
 			return;
@@ -103,6 +97,17 @@ final class SelectorThreadImpl implements SelectorThread {
 		};
 		queueOp(close);
 		return closeFuture;
+	}
+
+	private void queueOp(@Nonnull final IOOperation op) {
+		assert selector != null;
+		if (ops.offer(op)) {
+			if (newOps.compareAndSet(false, true)) {
+				selector.wakeup();
+			}
+		} else {
+			throw new Bug("ops.offer(op) == false");
+		}
 	}
 
 	/**
@@ -543,7 +548,10 @@ final class SelectorThreadImpl implements SelectorThread {
 	 * 
 	 * @author Ricardo Padilha
 	 */
-	private static final class KeyComparator implements Comparator<SelectionKey> {
+	private static final class KeyComparator implements Comparator<SelectionKey>, Serializable {
+
+		private static final long serialVersionUID = 1L;
+
 		KeyComparator() {
 			super();
 		}

@@ -28,7 +28,9 @@ import net.dsys.snio.api.buffer.MessageBufferProducer;
 import net.dsys.snio.api.channel.MessageChannel;
 import net.dsys.snio.api.group.GroupSocketAddress;
 import net.dsys.snio.api.pool.SelectorPool;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
 import net.dsys.snio.impl.group.GroupChannels;
+import net.dsys.snio.impl.group.builder.GroupConfig;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
 
@@ -52,12 +54,13 @@ public final class GroupEchoClient {
 		final int servers = Integer.parseInt(getArg("servers", "4", args));
 
 		final SelectorPool pool = SelectorPools.open("client", threads);
-		final MessageChannel<ByteBuffer> client = GroupChannels.newTCPGroup()
-				.setGroupSize(servers)
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
+				.useRingBuffer();
+		final GroupConfig group = new GroupConfig()
 				.setMessageLength(length)
-				.useRingBuffer()
-				.open();
+				.setGroupSize(servers);
+		final MessageChannel<ByteBuffer> channel = GroupChannels.openTCPGroup(common, group);
 
 		final GroupSocketAddress.Builder builder = GroupSocketAddress.build();
 		for (int i = 0; i < servers; i++) {
@@ -65,11 +68,11 @@ public final class GroupEchoClient {
 		}
 		final GroupSocketAddress address = builder.build();
 
-		client.connect(address);
-		client.getConnectFuture().get();
+		channel.connect(address);
+		channel.getConnectFuture().get();
 
-		final MessageBufferConsumer<ByteBuffer> in = client.getInputBuffer();
-		final MessageBufferProducer<ByteBuffer> out = client.getOutputBuffer();
+		final MessageBufferConsumer<ByteBuffer> in = channel.getInputBuffer();
+		final MessageBufferProducer<ByteBuffer> out = channel.getOutputBuffer();
 
 		final ExecutorService executor = Executors.newCachedThreadPool(); // unbounded!
 		executor.execute(MessageHandlers.syncConsumer(in, new EchoConsumer()));

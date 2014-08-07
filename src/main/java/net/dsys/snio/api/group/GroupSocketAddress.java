@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * @author Ricardo Padilha
@@ -32,6 +30,7 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 
 	private static final long serialVersionUID = 1L;
 
+	@Nonnull
 	private final List<SocketAddress> addresses;
 
 	GroupSocketAddress(@Nonnull final List<SocketAddress> addresses) {
@@ -54,7 +53,6 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	@Nonnegative
 	public int size() {
 		return addresses.size();
 	}
@@ -63,7 +61,7 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	public SocketAddress get(@Nonnegative final int index) {
+	public SocketAddress get(final int index) {
 		return addresses.get(index);
 	}
 
@@ -71,7 +69,6 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	@Nonnull
 	public Iterator<SocketAddress> iterator() {
 		return new GroupDataIterator<>(this);
 	}
@@ -80,7 +77,7 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean equals(@Nullable final Object obj) {
+	public boolean equals(final Object obj) {
 		if (obj == this) {
 			return true;
 		}
@@ -105,7 +102,6 @@ public final class GroupSocketAddress extends SocketAddress implements GroupData
 	 * {@inheritDoc}
 	 */
 	@Override
-	@Nonnull
 	public String toString() {
 		return addresses.toString();
 	}

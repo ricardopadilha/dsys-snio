@@ -29,6 +29,9 @@ import net.dsys.snio.api.channel.MessageServerChannel;
 import net.dsys.snio.api.handler.MessageHandler;
 import net.dsys.snio.api.pool.SelectorPool;
 import net.dsys.snio.impl.channel.MessageServerChannels;
+import net.dsys.snio.impl.channel.builder.ChannelConfig;
+import net.dsys.snio.impl.channel.builder.SSLConfig;
+import net.dsys.snio.impl.channel.builder.ServerConfig;
 import net.dsys.snio.impl.codec.Codecs;
 import net.dsys.snio.impl.handler.MessageHandlers;
 import net.dsys.snio.impl.pool.SelectorPools;
@@ -56,12 +59,15 @@ public final class SSLEchoServer {
 
 		final SelectorPool pool = SelectorPools.open("server", threads);
 
-		final MessageServerChannel<ByteBuffer> server = MessageServerChannels.newSSLServerChannel()
-				.setContext(getContext())
+		final ChannelConfig<ByteBuffer> common = new ChannelConfig<ByteBuffer>()
 				.setPool(pool)
-				.setMessageCodec(Codecs.getLZ4Factory(length))
-				.useRingBuffer()
-				.open();
+				.useRingBuffer();
+		final ServerConfig server = new ServerConfig()
+				.setMessageCodec(Codecs.getLZ4Factory(length));
+		final SSLConfig ssl = new SSLConfig()
+				.setContext(getContext());
+		final MessageServerChannel<ByteBuffer> channel =
+				MessageServerChannels.openSSLServerChannel(common, server, ssl);
 
 		// one thread per client
 		final MessageHandler<ByteBuffer> handler = MessageHandlers.buildHandler()
@@ -70,9 +76,9 @@ public final class SSLEchoServer {
 				.useHeapBuffer()
 				.build();
 
-		server.onAccept(handler.getAcceptListener());
-		server.bind(new InetSocketAddress(port));
-		server.getBindFuture().get();
+		channel.onAccept(handler.getAcceptListener());
+		channel.bind(new InetSocketAddress(port));
+		channel.getBindFuture().get();
 
 		pool.getCloseFuture().get();
 	}
@@ -80,17 +86,16 @@ public final class SSLEchoServer {
 	private static SSLContext getContext() throws Exception {
 		final char[] password = "password".toCharArray();
 
-		InputStream in;
 		// First initialize the key and trust material.
 		final KeyStore ksKeys = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksKeys.load(in, password);
-		in.close();
+		try (final InputStream in = SSLEchoClient.class.getResourceAsStream("nodes.jks")) {
+			ksKeys.load(in, password);
+		}
 
 		final KeyStore ksTrust = KeyStore.getInstance("JKS");
-		in = SSLEchoClient.class.getResourceAsStream("nodes.jks");
-		ksTrust.load(in, password);
-		in.close();
+		try (final InputStream in = SSLEchoClient.class.getResourceAsStream("nodes.jks")) {
+			ksTrust.load(in, password);
+		}
 
 		// KeyManager's decide which key material to use.
 		final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");

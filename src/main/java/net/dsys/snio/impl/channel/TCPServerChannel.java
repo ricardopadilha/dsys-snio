@@ -40,7 +40,9 @@ import net.dsys.snio.api.pool.SelectorPool;
  */
 final class TCPServerChannel<T> implements MessageServerChannel<T>, Acceptor {
 
+	@Nonnull
 	private final SelectorExecutor selector;
+	@Nonnull
 	private final KeyAcceptor<T> acceptor;
 	private ServerSocketChannel channel;
 

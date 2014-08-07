@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package net.dsys.snio.impl.channel.builder;
+package net.dsys.snio.impl.group.builder;
+
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
 
 import net.dsys.commons.api.lang.BinaryUnit;
 import net.dsys.commons.api.lang.Factory;
@@ -28,19 +31,20 @@ import net.dsys.snio.impl.limit.RateLimiters;
 /**
  * @author Ricardo Padilha
  */
-public final class ServerBuilderData {
+public final class GroupConfig {
 
 	private Factory<MessageCodec> codecs;
 	private Factory<RateLimiter> limiters;
+	private int size;
 
-	public ServerBuilderData() {
-		codecs = null;
-		limiters = RateLimiters.noLimitFactory();
+	public GroupConfig() {
+		this.size = 0;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "codecs != null")
 	@OptionGroup(name = "codec", seeAlso = "setMessageLength(length)")
-	public ServerBuilderData setMessageCodec(final Factory<MessageCodec> codecs) {
+	public GroupConfig setMessageCodec(@Nonnull final Factory<MessageCodec> codecs) {
 		if (codecs == null) {
 			throw new NullPointerException("codecs == null");
 		}
@@ -48,9 +52,10 @@ public final class ServerBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "length > 0")
 	@OptionGroup(name = "codec", seeAlso = "setMessageCodec(codecs)")
-	public ServerBuilderData setMessageLength(final int length) {
+	public GroupConfig setMessageLength(@Nonnegative final int length) {
 		if (length < 1) {
 			throw new IllegalArgumentException("length < 1");
 		}
@@ -58,9 +63,10 @@ public final class ServerBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "limiters != null")
 	@OptionGroup(name = "limiter", seeAlso = "setRateLimit(value, unit)")
-	public ServerBuilderData setRateLimiter(final Factory<RateLimiter> limiters) {
+	public GroupConfig setRateLimiter(@Nonnull final Factory<RateLimiter> limiters) {
 		if (limiters == null) {
 			throw new NullPointerException("limiters == null");
 		}
@@ -68,19 +74,46 @@ public final class ServerBuilderData {
 		return this;
 	}
 
+	@Nonnull
 	@Mandatory(restrictions = "value >= 1 && unit != null")
 	@OptionGroup(name = "limiter", seeAlso = "setRateLimiter(limiters)")
-	public ServerBuilderData setRateLimit(final long value, final BinaryUnit unit) {
+	public GroupConfig setRateLimit(@Nonnegative final long value, @Nonnull final BinaryUnit unit) {
 		this.limiters = RateLimiters.limitFactory(value, unit);
 		return this;
 	}
 
+	@Nonnull
+	@Mandatory(restrictions = "size > 0")
+	public GroupConfig setGroupSize(final int size) {
+		if (size < 1) {
+			throw new IllegalArgumentException("size < 1");
+		}
+		this.size = size;
+		return this;
+	}
+
+	@Nonnull
 	public Factory<MessageCodec> getMessageCodecs() {
+		if (codecs == null) {
+			throw new IllegalStateException("message codec factory undefined");
+		}
 		return codecs;
 	}
 
+	@Nonnull
 	public Factory<RateLimiter> getRateLimiters() {
+		if (limiters == null) {
+			throw new IllegalStateException("rate limiter factory undefined");
+		}
 		return limiters;
+	}
+
+	@Nonnegative
+	public int getSize() {
+		if (size < 1) {
+			throw new IllegalStateException("size is undefined");
+		}
+		return size;
 	}
 
 }
