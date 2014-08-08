@@ -1,0 +1,67 @@
+
+final java.util.Random rnd = java.util.concurrent.ThreadLocalRandom.current();
+final int size = 4096;
+final int reps = 1_000_000;
+final java.nio.ByteBuffer in = java.nio.ByteBuffer.allocateDirect(size);
+final java.nio.ByteBuffer out = java.nio.ByteBuffer.allocateDirect(size);
+java.nio.ByteBuffer tmp;
+while (in.remaining() > 0) {
+	in.put((byte) rnd.nextInt());
+}
+in.flip();
+
+long start, end;
+
+// xxHash throughput test
+
+final net.dsys.snio.api.codec.MessageCodec xxhash = net.dsys.snio.impl.codec.Codecs.getXXHashChecksum();
+tmp = java.nio.ByteBuffer.allocateDirect(xxhash.getFrameLength());
+for(int j = 0; j < 4; j++) {
+	start = System.nanoTime();
+	for(int i = 0; i < reps; i++) {
+		xxhash.put(in, tmp);
+		in.clear();
+		tmp.clear();
+	}
+	end = System.nanoTime();
+	final long delta = end - start;
+	final double secs = delta / 1_000_000_000d;
+	final long megabytes = (long) size * reps / (2 << 20);
+	System.out.println("xxHash: " + delta + " ns " + (megabytes / secs) + " MB/sec" );
+}
+
+// CRC32 throughput test
+
+final net.dsys.snio.api.codec.MessageCodec crc32 = net.dsys.snio.impl.codec.Codecs.getCRC32Checksum();
+tmp = java.nio.ByteBuffer.allocateDirect(crc32.getFrameLength());
+for(int j = 0; j < 4; j++) {
+	start = System.nanoTime();
+	for(int i = 0; i < reps; i++) {
+		crc32.put(in, tmp);
+		in.clear();
+		tmp.clear();
+	}
+	end = System.nanoTime();
+	final long delta = end - start;
+	final double secs = delta / 1_000_000_000d;
+	final long megabytes = (long) size * reps / (2 << 20);
+	System.out.println("CRC32: " + delta + " ns " + (megabytes / secs) + " MB/sec" );
+}
+
+// Adler32 throughput test
+
+final net.dsys.snio.api.codec.MessageCodec adl32 = net.dsys.snio.impl.codec.Codecs.getAdler32Checksum();
+tmp = java.nio.ByteBuffer.allocateDirect(adl32.getFrameLength());
+for(int j = 0; j < 4; j++) {
+	start = System.nanoTime();
+	for(int i = 0; i < reps; i++) {
+		adl32.put(in, tmp);
+		in.clear();
+		tmp.clear();
+	}
+	end = System.nanoTime();
+	final long delta = end - start;
+	final double secs = delta / 1_000_000_000d;
+	final long megabytes = (long) size * reps / (2 << 20);
+	System.out.println("Adler32: " + delta + " ns " + (megabytes / secs) + " MB/sec" );
+}
