@@ -15,6 +15,21 @@
 		</license>
 	</licenses>
 
+	<scm>
+		<connection>https://github.com/ricardopadilha/dsys-snio.git</connection>
+		<developerConnection>git@github.com:ricardopadilha/dsys-snio.git</developerConnection>
+		<url>https://github.com/ricardopadilha/dsys-snio</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<developers>
+		<developer>
+			<id>ricardopadilha</id>
+			<name>Ricardo Padilha</name>
+			<url>http://about.me/ricardopadilha</url>
+		</developer>
+	</developers>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.7</maven.compiler.source>
